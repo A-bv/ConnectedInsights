@@ -41,6 +41,29 @@ public final class InstagramGraphService: InstagramGraphServicing {
         )
     }
 
+    public convenience init(
+        credentials: InstagramGraphCredentials,
+        apiGraphVersion: String = ConnectedInsightsConfiguration.production.graphAPIVersion
+    ) {
+        let credentialsProvider = StaticInstagramGraphCredentialsProvider(credentials: credentials)
+        let endpointBuilder = InstagramGraphEndpointBuilder(apiGraphVersion: apiGraphVersion)
+        let client = InstagramGraphClient(apiGraphVersion: apiGraphVersion)
+        self.init(
+            credentialsProvider: credentialsProvider,
+            endpointBuilder: endpointBuilder,
+            hashtagRepository: InstagramHashtagRepository(
+                credentialsProvider: credentialsProvider,
+                endpointBuilder: endpointBuilder,
+                client: client
+            ),
+            profileRepository: InstagramProfileRepository(
+                credentialsProvider: credentialsProvider,
+                endpointBuilder: endpointBuilder,
+                client: client
+            )
+        )
+    }
+
     public init(
         credentialsProvider: any InstagramGraphCredentialsProviding,
         endpointBuilder: InstagramGraphEndpointBuilder,

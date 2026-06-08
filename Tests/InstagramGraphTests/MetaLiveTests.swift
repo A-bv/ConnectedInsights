@@ -7,21 +7,21 @@ final class MetaLiveTests: XCTestCase {
     func testMeAccountsEndpointAgainstMeta() throws {
         let token = try requiredEnvironmentValue("META_GRAPH_TOKEN")
         let version = graphAPIVersion
-        let url = "https://graph.facebook.com/\(version)/me/accounts?fields=id,name,access_token,tasks&access_token=\(token)"
+        let url = "https://graph.facebook.com/\(version)/me/accounts?fields=id,name,access_token,tasks,instagram_business_account{id,username}&access_token=\(token)"
 
         let data = try fetchGraphData(from: url, version: version)
         let response = try JSONDecoder().decode(MeAccountsResponse.self, from: data)
 
         XCTAssertFalse(response.data.isEmpty, "Expected /me/accounts to return at least one page.")
         response.data.forEach { page in
-            print("[MetaLive] Page id=\(page.id) name=\(page.name ?? "<none>") tasks=\(page.tasks ?? [])")
+            print("[MetaLive] Page id=\(page.id) name=\(page.name ?? "<none>") instagram=\(page.instagramBusinessAccount?.username ?? "<none>") tasks=\(page.tasks ?? [])")
         }
     }
 
     func testPageInstagramBusinessAccountAgainstMeta() throws {
         let token = try requiredEnvironmentValue("META_GRAPH_TOKEN")
-        let pageID = try requiredEnvironmentValue("META_PAGE_ID")
         let version = graphAPIVersion
+        let pageID = try resolvePageId(token: token, version: version)
         let url = "https://graph.facebook.com/\(version)/\(pageID)?fields=instagram_business_account{id,username}&access_token=\(token)"
 
         let data = try fetchGraphData(from: url, version: version)
@@ -36,8 +36,13 @@ final class MetaLiveTests: XCTestCase {
 
     func testAnalyticsProfileEndpointAgainstMeta() throws {
         let token = try requiredEnvironmentValue("META_GRAPH_TOKEN")
-        let instagramBusinessId = try requiredEnvironmentValue("META_IG_BUSINESS_ID")
         let version = graphAPIVersion
+        let pageID = try resolvePageId(token: token, version: version)
+        let instagramBusinessId = try resolveInstagramBusinessAccountId(
+            token: token,
+            pageID: pageID,
+            version: version
+        )
         let credentials = InstagramGraphCredentials(
             facebookToken: token,
             instagramBusinessAccountId: instagramBusinessId
@@ -55,9 +60,14 @@ final class MetaLiveTests: XCTestCase {
 
     func testHashtagSearchAgainstMeta() throws {
         let token = try requiredEnvironmentValue("META_GRAPH_TOKEN")
-        let instagramBusinessId = try requiredEnvironmentValue("META_IG_BUSINESS_ID")
-        let hashtag = try requiredEnvironmentValue("META_TEST_HASHTAG")
+        let hashtag = testHashtag
         let version = graphAPIVersion
+        let pageID = try resolvePageId(token: token, version: version)
+        let instagramBusinessId = try resolveInstagramBusinessAccountId(
+            token: token,
+            pageID: pageID,
+            version: version
+        )
         let credentialsProvider = StaticInstagramGraphCredentialsProvider(
             facebookToken: token,
             instagramBusinessAccountId: instagramBusinessId
@@ -87,9 +97,14 @@ final class MetaLiveTests: XCTestCase {
         }
 
         let token = try requiredEnvironmentValue("META_GRAPH_TOKEN")
-        let instagramBusinessId = try requiredEnvironmentValue("META_IG_BUSINESS_ID")
-        let hashtag = try requiredEnvironmentValue("META_TEST_HASHTAG")
+        let hashtag = testHashtag
         let version = graphAPIVersion
+        let pageID = try resolvePageId(token: token, version: version)
+        let instagramBusinessId = try resolveInstagramBusinessAccountId(
+            token: token,
+            pageID: pageID,
+            version: version
+        )
         let searchURL = "https://graph.facebook.com/\(version)/ig_hashtag_search?user_id=\(instagramBusinessId)&q=\(hashtag)&access_token=\(token)"
         let searchData = try fetchGraphData(from: searchURL, version: version)
         let hashtagResponse = try JSONDecoder().decode(HashtagIdResponse.self, from: searchData)
@@ -111,11 +126,52 @@ final class MetaLiveTests: XCTestCase {
         environment["META_GRAPH_VERSION"] ?? ConnectedInsightsConfiguration.production.graphAPIVersion
     }
 
+    private var testHashtag: String {
+        environment["META_TEST_HASHTAG"].flatMap { $0.isEmpty ? nil : $0 } ?? "travel"
+    }
+
     private func requiredEnvironmentValue(_ key: String) throws -> String {
         guard let value = environment[key], !value.isEmpty else {
             throw XCTSkip("Set \(key) to run Meta live integration tests.")
         }
         return value
+    }
+
+    private func optionalEnvironmentValue(_ key: String) -> String? {
+        guard let value = environment[key], !value.isEmpty else {
+            return nil
+        }
+        return value
+    }
+
+    private func resolvePageId(token: String, version: String) throws -> String {
+        if let pageID = optionalEnvironmentValue("META_PAGE_ID") {
+            return pageID
+        }
+
+        let url = "https://graph.facebook.com/\(version)/me/accounts?fields=id,name,instagram_business_account{id,username}&access_token=\(token)"
+        let data = try fetchGraphData(from: url, version: version)
+        let response = try JSONDecoder().decode(MeAccountsResponse.self, from: data)
+        let page = try XCTUnwrap(
+            response.data.first(where: { $0.instagramBusinessAccount != nil }),
+            "No Facebook Page connected to an Instagram Business / Creator account was found. Set META_PAGE_ID to force a specific Page."
+        )
+        print("[MetaLive] Using Page id=\(page.id) name=\(page.name ?? "<none>") instagram=\(page.instagramBusinessAccount?.username ?? "<none>")")
+        return page.id
+    }
+
+    private func resolveInstagramBusinessAccountId(
+        token: String,
+        pageID: String,
+        version: String
+    ) throws -> String {
+        let url = "https://graph.facebook.com/\(version)/\(pageID)?fields=instagram_business_account{id}&access_token=\(token)"
+        let data = try fetchGraphData(from: url, version: version)
+        let response = try JSONDecoder().decode(PageInstagramBusinessAccountResponse.self, from: data)
+        return try XCTUnwrap(
+            response.instagramBusinessAccount?.id,
+            "The selected page has no connected Instagram Business / Creator account."
+        )
     }
 
     private func fetchGraphData(from url: String, version: String) throws -> Data {
@@ -142,12 +198,14 @@ private struct PageAccount: Decodable {
     let name: String?
     let accessToken: String?
     let tasks: [String]?
+    let instagramBusinessAccount: InstagramBusinessAccount?
 
     private enum CodingKeys: String, CodingKey {
         case id
         case name
         case accessToken = "access_token"
         case tasks
+        case instagramBusinessAccount = "instagram_business_account"
     }
 }
 

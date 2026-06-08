@@ -15,6 +15,21 @@ public struct InstagramGraphCredentials {
     }
 }
 
+public struct StaticInstagramGraphCredentialsProvider: InstagramGraphCredentialsProviding {
+    public let facebookToken: String?
+    public let instagramBusinessAccountId: String?
+
+    public init(facebookToken: String, instagramBusinessAccountId: String) {
+        self.facebookToken = facebookToken
+        self.instagramBusinessAccountId = instagramBusinessAccountId
+    }
+
+    public init(credentials: InstagramGraphCredentials) {
+        self.facebookToken = credentials.facebookToken
+        self.instagramBusinessAccountId = credentials.instagramBusinessAccountId
+    }
+}
+
 public final class SettingsInstagramGraphCredentialsProvider: InstagramGraphCredentialsProviding {
     private let settings: any ConnectedInsightsSettingsProtocol
 
