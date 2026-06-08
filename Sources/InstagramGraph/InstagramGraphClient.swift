@@ -3,6 +3,7 @@ import Foundation
 public enum InstagramGraphServiceError: LocalizedError {
     case invalidURL(String)
     case missingCredentials(hasToken: Bool, hasInstagramBusinessId: Bool)
+    case instagramAccountNotFound
     case emptyResponse
     case unexpectedResponse
     case graphHTTPError(statusCode: Int, body: String)
@@ -14,6 +15,8 @@ public enum InstagramGraphServiceError: LocalizedError {
             return "Invalid Instagram Graph URL: \(url)"
         case let .missingCredentials(hasToken, hasInstagramBusinessId):
             return "Missing Instagram Graph credentials. hasToken=\(hasToken), hasInstagramBusinessId=\(hasInstagramBusinessId)"
+        case .instagramAccountNotFound:
+            return "No Instagram Business / Creator account connected to a Facebook Page was found for this token."
         case .emptyResponse:
             return "Instagram Graph returned an empty response."
         case .unexpectedResponse:

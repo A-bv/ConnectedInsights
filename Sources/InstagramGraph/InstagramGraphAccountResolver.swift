@@ -55,10 +55,7 @@ public final class InstagramGraphAccountResolver {
                     guard let page = response.data.first(where: { $0.instagramBusinessAccount != nil }),
                           let instagramAccount = page.instagramBusinessAccount
                     else {
-                        completion(.failure(InstagramGraphServiceError.missingCredentials(
-                            hasToken: true,
-                            hasInstagramBusinessId: false
-                        )))
+                        completion(.failure(InstagramGraphServiceError.instagramAccountNotFound))
                         return
                     }
 

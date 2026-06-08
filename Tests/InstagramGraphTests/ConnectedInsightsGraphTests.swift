@@ -171,12 +171,10 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         case .success:
             XCTFail("Expected missing credentials error")
         case .failure(let error):
-            guard case InstagramGraphServiceError.missingCredentials(let hasToken, let hasInstagramBusinessId) = error else {
-                XCTFail("Expected missingCredentials error, got \(error)")
+            guard case InstagramGraphServiceError.instagramAccountNotFound = error else {
+                XCTFail("Expected instagramAccountNotFound error, got \(error)")
                 return
             }
-            XCTAssertTrue(hasToken)
-            XCTAssertFalse(hasInstagramBusinessId)
         case nil:
             XCTFail("Expected resolver result")
         }
