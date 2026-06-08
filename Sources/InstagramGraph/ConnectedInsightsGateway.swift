@@ -60,12 +60,15 @@ public protocol ConnectedInsightsGatewayProtocol {
     var profileProvider: any ProfileDataProviding { get }
 
     func accessState() -> ConnectedInsightsAccessState
+    func setup(facebookToken: String, completion: @escaping (Bool) -> Void)
+    func reset()
 }
 
 public final class ConnectedInsightsGateway: ConnectedInsightsGatewayProtocol {
-    private let settings: any ConnectedInsightsSettingsProtocol
+    private var settings: any ConnectedInsightsSettingsProtocol
     public let hashtagProvider: any HashtagSearchProviding
     public let profileProvider: any ProfileDataProviding
+    private let accountResolver: InstagramGraphAccountResolver
 
     public convenience init(
         settings: any ConnectedInsightsSettingsProtocol = UserDefaultsConnectedInsightsSettings(),
@@ -85,18 +88,44 @@ public final class ConnectedInsightsGateway: ConnectedInsightsGatewayProtocol {
                 credentialsProvider: credentialsProvider,
                 endpointBuilder: endpointBuilder,
                 client: client
-            )
+            ),
+            accountResolver: InstagramGraphAccountResolver(apiGraphVersion: configuration.graphAPIVersion)
         )
     }
 
     public init(
         settings: any ConnectedInsightsSettingsProtocol,
         hashtagProvider: any HashtagSearchProviding,
-        profileProvider: any ProfileDataProviding
+        profileProvider: any ProfileDataProviding,
+        accountResolver: InstagramGraphAccountResolver = InstagramGraphAccountResolver()
     ) {
         self.settings = settings
         self.hashtagProvider = hashtagProvider
         self.profileProvider = profileProvider
+        self.accountResolver = accountResolver
+    }
+
+    public func setup(facebookToken: String, completion: @escaping (Bool) -> Void) {
+        settings.facebookToken = facebookToken
+        accountResolver.resolveAccount(facebookToken: facebookToken) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let account):
+                self.settings.instagramBusinessAccountId = account.instagramBusinessAccountId
+                self.settings.isCorrectSetup = true
+                completion(true)
+            case .failure(let error):
+                print("[ConnectedInsights][Setup] Account resolution failed: \(error.localizedDescription)")
+                self.settings.isCorrectSetup = false
+                completion(false)
+            }
+        }
+    }
+
+    public func reset() {
+        settings.facebookToken = nil
+        settings.instagramBusinessAccountId = nil
+        settings.isCorrectSetup = false
     }
 
     public func accessState() -> ConnectedInsightsAccessState {
