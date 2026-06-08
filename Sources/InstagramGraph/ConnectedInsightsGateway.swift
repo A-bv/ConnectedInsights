@@ -43,7 +43,16 @@ public protocol HashtagSearchProviding {
 }
 
 public protocol ProfileDataProviding {
-    func loadProfileForAnalytics(completion: @escaping (Result<Profile, Error>) -> Void)
+    func loadProfileForAnalytics(
+        mediaLimit: Int?,
+        completion: @escaping (Result<Profile, Error>) -> Void
+    )
+}
+
+public extension ProfileDataProviding {
+    func loadProfileForAnalytics(completion: @escaping (Result<Profile, Error>) -> Void) {
+        loadProfileForAnalytics(mediaLimit: nil, completion: completion)
+    }
 }
 
 public protocol ConnectedInsightsGatewayProtocol {
@@ -126,7 +135,10 @@ public struct UnavailableHashtagProvider: HashtagSearchProviding {
 public struct UnavailableProfileProvider: ProfileDataProviding {
     public init() {}
 
-    public func loadProfileForAnalytics(completion: @escaping (Result<Profile, Error>) -> Void) {
+    public func loadProfileForAnalytics(
+        mediaLimit: Int? = nil,
+        completion: @escaping (Result<Profile, Error>) -> Void
+    ) {
         completion(.failure(ConnectedInsightsError.dataProviderUnavailable))
     }
 }

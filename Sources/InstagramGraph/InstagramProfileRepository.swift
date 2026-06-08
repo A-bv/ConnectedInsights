@@ -1,14 +1,16 @@
 import Foundation
 
 public protocol InstagramProfileRepositoryProtocol: ProfileDataProviding {
-    func loadProfileForAnalytics(completion: @escaping (Result<Profile, Error>) -> Void)
+    func loadProfileForAnalytics(
+        mediaLimit: Int?,
+        completion: @escaping (Result<Profile, Error>) -> Void
+    )
 }
 
 public final class InstagramProfileRepository: InstagramProfileRepositoryProtocol {
     private let credentialsProvider: any InstagramGraphCredentialsProviding
     private let endpointBuilder: InstagramGraphEndpointBuilder
     private let client: any InstagramGraphClientProtocol
-    private let mediaLimitQueue = DispatchQueue(label: "com.packtags.connectedInsights.mediaLimit")
     private let onDataFetched: ((Data) -> Void)?
 
     public init(
@@ -23,59 +25,25 @@ public final class InstagramProfileRepository: InstagramProfileRepositoryProtoco
         self.onDataFetched = onDataFetched
     }
 
-    public func loadProfileForAnalytics(completion: @escaping (Result<Profile, Error>) -> Void) {
+    public func loadProfileForAnalytics(
+        mediaLimit: Int? = nil,
+        completion: @escaping (Result<Profile, Error>) -> Void
+    ) {
         switch credentialsProvider.validCredentials() {
         case .failure(let error):
             print("[ConnectedInsights][Graph] Failure: \(error.localizedDescription)")
             completion(.failure(error))
         case .success(let credentials):
-            findMediaLimit(credentials: credentials) { value in
-                guard let encodedUrl = self.endpointBuilder.analyticsProfileURL(
-                    mediaLimit: value,
-                    credentials: credentials
-                ) else {
-                    completion(.failure(InstagramGraphServiceError.invalidURL("analytics profile")))
-                    return
-                }
-
-                self.fetchProfile(from: encodedUrl) { result in
-                    completion(result)
-                }
-            }
-        }
-    }
-
-    private func findMediaLimit(
-        credentials: InstagramGraphCredentials,
-        completion: @escaping (Int) -> Void
-    ) {
-        var counts: [Int] = []
-        let group = DispatchGroup()
-
-        for limit in 1...12 {
             guard let encodedUrl = endpointBuilder.analyticsProfileURL(
-                mediaLimit: limit,
+                mediaLimit: mediaLimit,
                 credentials: credentials
-            ) else { return }
-
-            group.enter()
-
-            fetchProfile(from: encodedUrl) { result in
-                if case let .success(profile) = result, profile.username != nil {
-                    self.mediaLimitQueue.async {
-                        counts.append(profile.media?.data.count ?? 0)
-                        group.leave()
-                    }
-                } else {
-                    group.leave()
-                }
+            ) else {
+                completion(.failure(InstagramGraphServiceError.invalidURL("analytics profile")))
+                return
             }
-        }
-
-        group.notify(queue: .main) {
-            let limit = counts.max() ?? 0
-            print("Media limit: \(limit)")
-            completion(limit)
+            fetchProfile(from: encodedUrl) { result in
+                completion(result)
+            }
         }
     }
 
