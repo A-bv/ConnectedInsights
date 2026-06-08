@@ -82,6 +82,106 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         }
     }
 
+    func testAccountResolver_resolvesFirstPageWithInstagramAccount() throws {
+        let response = """
+        {
+          "data": [
+            { "id": "page-without-instagram", "name": "No Instagram" },
+            {
+              "id": "page-id",
+              "name": "PackTags",
+              "instagram_business_account": {
+                "id": "ig-business-id",
+                "username": "packtags"
+              }
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+        let client = FakeInstagramGraphClient(responses: [.success(response)])
+        let sut = InstagramGraphAccountResolver(apiGraphVersion: productionGraphAPIVersion, client: client)
+        let expectation = expectation(description: "Resolve account")
+        var receivedResult: Result<InstagramGraphResolvedAccount, Error>?
+
+        sut.resolveAccount(facebookToken: "facebook-token") { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1)
+        let account = try XCTUnwrap(receivedResult).get()
+        XCTAssertEqual(account.facebookPageId, "page-id")
+        XCTAssertEqual(account.facebookPageName, "PackTags")
+        XCTAssertEqual(account.instagramBusinessAccountId, "ig-business-id")
+        XCTAssertEqual(account.instagramUsername, "packtags")
+        XCTAssertEqual(client.requestedURLs.count, 1)
+        XCTAssertTrue(client.requestedURLs[0].contains("/\(productionGraphAPIVersion)/me/accounts"))
+        XCTAssertTrue(client.requestedURLs[0].contains("access_token=facebook-token"))
+    }
+
+    func testAccountResolver_resolveCredentialsBuildsServiceCredentials() throws {
+        let response = """
+        {
+          "data": [
+            {
+              "id": "page-id",
+              "instagram_business_account": {
+                "id": "ig-business-id"
+              }
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+        let client = FakeInstagramGraphClient(responses: [.success(response)])
+        let sut = InstagramGraphAccountResolver(apiGraphVersion: productionGraphAPIVersion, client: client)
+        let expectation = expectation(description: "Resolve credentials")
+        var receivedResult: Result<InstagramGraphCredentials, Error>?
+
+        sut.resolveCredentials(facebookToken: "facebook-token") { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1)
+        let credentials = try XCTUnwrap(receivedResult).get()
+        XCTAssertEqual(credentials.facebookToken, "facebook-token")
+        XCTAssertEqual(credentials.instagramBusinessAccountId, "ig-business-id")
+    }
+
+    func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials() {
+        let response = """
+        {
+          "data": [
+            { "id": "page-id", "name": "No Instagram" }
+          ]
+        }
+        """.data(using: .utf8)!
+        let client = FakeInstagramGraphClient(responses: [.success(response)])
+        let sut = InstagramGraphAccountResolver(apiGraphVersion: productionGraphAPIVersion, client: client)
+        let expectation = expectation(description: "Resolve account failure")
+        var receivedResult: Result<InstagramGraphResolvedAccount, Error>?
+
+        sut.resolveAccount(facebookToken: "facebook-token") { result in
+            receivedResult = result
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1)
+        switch receivedResult {
+        case .success:
+            XCTFail("Expected missing credentials error")
+        case .failure(let error):
+            guard case InstagramGraphServiceError.missingCredentials(let hasToken, let hasInstagramBusinessId) = error else {
+                XCTFail("Expected missingCredentials error, got \(error)")
+                return
+            }
+            XCTAssertTrue(hasToken)
+            XCTAssertFalse(hasInstagramBusinessId)
+        case nil:
+            XCTFail("Expected resolver result")
+        }
+    }
+
     func testEndpointBuilder_buildsEncodedHashtagSearchURL() throws {
         let sut = InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion)
         let credentials = InstagramGraphCredentials(
