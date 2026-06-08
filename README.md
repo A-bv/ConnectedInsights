@@ -1,12 +1,12 @@
 # InstagramGraph
 
-`InstagramGraph` is a small Swift package between your Apple app (iOS/macOS) and Meta's Instagram Graph API.
+A small Swift package that simplifies communication between your Apple app (iOS/macOS) and Meta's Instagram Graph API.
 
-Give it a valid Meta token and ask for hashtag media or Instagram analytics. It resolves the connected Instagram account, handles the Graph API calls, and returns results your app can use directly.
+It takes a valid Meta token as input and outputs hashtag media or Instagram analytics, skipping the Graph API implementation work in between.
 
 The implementation stays outside your app for easier testing, reuse, and updates.
 
-Note: the Meta token should be generated using the [facebook/facebook-ios-sdk](https://github.com/facebook/facebook-ios-sdk).
+Note: get the Meta token in your app with [Facebook Login for iOS](https://developers.facebook.com/docs/facebook-login/ios), or generate one manually with [Live Meta Tests](#live-meta-tests).
 
 ## Installation
 
@@ -18,13 +18,11 @@ https://github.com/A-bv/InstagramGraph
 
 ## Usage
 
-Import the package:
-
 ```swift
 import InstagramGraph
 ```
 
-Resolve credentials from the token, then create the service:
+Resolve the connected Instagram account from the token:
 
 ```swift
 let resolver = InstagramGraphAccountResolver()
@@ -33,30 +31,18 @@ resolver.resolveCredentials(facebookToken: metaToken) { result in
     switch result {
     case .success(let credentials):
         let graphService = InstagramGraphService(credentials: credentials)
+
+        graphService.searchHashtag(searchedHashtag: "travel") { result in
+            print(result)
+        }
+
+        graphService.loadProfileForAnalytics(mediaLimit: 12) { result in
+            print(result)
+        }
+
     case .failure(let error):
         print(error)
     }
-}
-```
-
-Search hashtag media:
-
-```swift
-graphService.searchHashtag(searchedHashtag: "travel") { result in
-    switch result {
-    case .success(let media):
-        print(media)
-    case .failure(let error):
-        print(error)
-    }
-}
-```
-
-Load profile analytics:
-
-```swift
-graphService.loadProfileForAnalytics(mediaLimit: 12) { result in
-    print(result)
 }
 ```
 
