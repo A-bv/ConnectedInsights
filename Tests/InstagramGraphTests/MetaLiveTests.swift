@@ -43,7 +43,7 @@ final class MetaLiveTests: XCTestCase {
             instagramBusinessAccountId: instagramBusinessId
         )
         let endpointBuilder = InstagramGraphEndpointBuilder(apiGraphVersion: version)
-        let mediaLimit = Int(environment["META_MEDIA_LIMIT"] ?? "") ?? 1
+        let mediaLimit = environment["META_MEDIA_LIMIT"].flatMap(Int.init)
         let url = try XCTUnwrap(endpointBuilder.analyticsProfileURL(
             mediaLimit: mediaLimit,
             credentials: credentials

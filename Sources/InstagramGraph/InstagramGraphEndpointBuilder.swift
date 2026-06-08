@@ -38,7 +38,7 @@ public struct InstagramGraphEndpointBuilder {
     }
 
     public func analyticsProfileURL(
-        mediaLimit: Int,
+        mediaLimit: Int?,
         credentials: InstagramGraphCredentials
     ) -> String? {
         let mediaMetricsFields = [
@@ -53,6 +53,12 @@ public struct InstagramGraphEndpointBuilder {
             "like_count",
             "insights.metric(reach,impressions,total_interactions)"
         ]
+        let mediaField: String
+        if let mediaLimit {
+            mediaField = "media.limit(\(mediaLimit)){\(mediaMetricsFields.joined(separator: ","))}"
+        } else {
+            mediaField = "media{\(mediaMetricsFields.joined(separator: ","))}"
+        }
 
         let fields = [
             "biography",
@@ -66,7 +72,7 @@ public struct InstagramGraphEndpointBuilder {
             "username",
             "website",
             "recently_searched_hashtags",
-            "media.limit(\(mediaLimit)){\(mediaMetricsFields.joined(separator: ","))}"
+            mediaField
         ]
 
         let url = "\(baseURL)/\(apiGraphVersion)/\(credentials.instagramBusinessAccountId)?fields=\(fields.joined(separator: ","))&access_token=\(credentials.facebookToken)"

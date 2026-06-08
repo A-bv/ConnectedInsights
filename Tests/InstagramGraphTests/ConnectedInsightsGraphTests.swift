@@ -150,6 +150,24 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         XCTAssertFalse(url.contains("media_product_type"))
     }
 
+    func testEndpointBuilder_analyticsProfileURL_whenMediaLimitIsNil_usesDefaultMediaEdge() throws {
+        let sut = InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion)
+        let credentials = InstagramGraphCredentials(
+            facebookToken: "facebook-token",
+            instagramBusinessAccountId: "1789"
+        )
+
+        let url = try XCTUnwrap(sut.analyticsProfileURL(
+            mediaLimit: nil,
+            credentials: credentials
+        ))
+
+        XCTAssertTrue(url.contains("media%7B"))
+        XCTAssertFalse(url.contains("media.limit("))
+        XCTAssertTrue(url.contains("caption"))
+        XCTAssertTrue(url.contains("insights.metric(reach%2Cimpressions%2Ctotal_interactions)"))
+    }
+
     func testEndpointBuilder_businessDiscoveryURL_buildsValidMediaLimitSyntax() throws {
         let sut = InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion)
         let credentials = InstagramGraphCredentials(
@@ -268,9 +286,8 @@ final class ConnectedInsightsGraphTests: XCTestCase {
 
     func testProfileRepository_whenInsightsMetricInvalid_propagates400Error() {
         let invalidMetricBody = #"{"error":{"message":"(#100) metric[1] must be one of the following values: reach, follower_count, ...","type":"OAuthException","code":100}}"#
-        // findMediaLimit probes limits 1-12 (12 requests) + 1 final fetch = 13 total
         let failure: Result<Data, Error> = .failure(InstagramGraphServiceError.graphHTTPError(statusCode: 400, body: invalidMetricBody))
-        let client = FakeInstagramGraphClient(responses: Array(repeating: failure, count: 13))
+        let client = FakeInstagramGraphClient(responses: [failure])
         let sut = InstagramProfileRepository(
             credentialsProvider: FakeInstagramGraphCredentialsProvider(
                 facebookToken: "facebook-token",
@@ -397,7 +414,10 @@ private struct FakeHashtagProvider: HashtagSearchProviding {
 }
 
 private struct FakeProfileProvider: ProfileDataProviding {
-    func loadProfileForAnalytics(completion: @escaping (Result<Profile, Error>) -> Void) {
+    func loadProfileForAnalytics(
+        mediaLimit: Int?,
+        completion: @escaping (Result<Profile, Error>) -> Void
+    ) {
         completion(.failure(ConnectedInsightsError.dataProviderUnavailable))
     }
 }

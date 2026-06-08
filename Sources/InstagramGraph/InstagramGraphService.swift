@@ -6,7 +6,10 @@ public protocol InstagramGraphServicing: HashtagSearchProviding, ProfileDataProv
         completion: @escaping (Result<[DataMedia], Error>) -> Void
     )
 
-    func loadProfileForAnalytics(completion: @escaping (Result<Profile, Error>) -> Void)
+    func loadProfileForAnalytics(
+        mediaLimit: Int?,
+        completion: @escaping (Result<Profile, Error>) -> Void
+    )
 }
 
 public final class InstagramGraphService: InstagramGraphServicing {
@@ -57,8 +60,11 @@ public final class InstagramGraphService: InstagramGraphServicing {
         hashtagRepository.searchHashtag(searchedHashtag: searchedHashtag, completion: completion)
     }
 
-    public func loadProfileForAnalytics(completion: @escaping (Result<Profile, Error>) -> Void) {
-        profileRepository.loadProfileForAnalytics(completion: completion)
+    public func loadProfileForAnalytics(
+        mediaLimit: Int? = nil,
+        completion: @escaping (Result<Profile, Error>) -> Void
+    ) {
+        profileRepository.loadProfileForAnalytics(mediaLimit: mediaLimit, completion: completion)
     }
 
     public func business_discovery_url(account: String) -> String? {
