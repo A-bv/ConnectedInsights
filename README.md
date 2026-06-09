@@ -20,11 +20,7 @@ https://github.com/A-bv/InstagramGraph
 
 ```swift
 import InstagramGraph
-```
 
-Resolve the connected Instagram account from the token:
-
-```swift
 let resolver = InstagramGraphAccountResolver()
 
 resolver.resolveCredentials(facebookToken: metaToken) { result in
