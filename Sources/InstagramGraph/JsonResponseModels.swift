@@ -27,13 +27,13 @@ public struct Profile: Hashable, Decodable {
 }
 
 public struct InsightsIG: Hashable, Decodable {
-    public let data: [DataIG?]
+    public let data: [DataIG]
 }
 
 public struct DataIG: Hashable, Decodable {
     public let name: String?
     public let period: String?
-    public let values: [Values?]
+    public let values: [Values]
 }
 
 public struct Values: Hashable, Decodable {
@@ -47,7 +47,7 @@ public struct Values: Hashable, Decodable {
 }
 
 public struct Media: Hashable, Decodable {
-    public let data: [DataMedia?]
+    public let data: [DataMedia]
 }
 
 public struct DataMedia: Hashable, Decodable {
