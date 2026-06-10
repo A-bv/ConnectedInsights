@@ -444,8 +444,8 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         XCTAssertTrue(client.requestedURLs[1].contains("17841562498105353/top_media"))
         let firstMedia = try XCTUnwrap(loadedMedia?.first)
         XCTAssertEqual(firstMedia.caption, "Hello")
-        XCTAssertEqual(firstMedia.comments_count, 3)
-        XCTAssertEqual(firstMedia.like_count, 9)
+        XCTAssertEqual(firstMedia.commentsCount, 3)
+        XCTAssertEqual(firstMedia.likeCount, 9)
     }
 
     func testHashtagRepository_whenTopMediaReturns500_propagatesError() {
