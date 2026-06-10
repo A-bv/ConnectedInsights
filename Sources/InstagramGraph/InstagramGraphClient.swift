@@ -98,3 +98,15 @@ public enum InstagramGraphLogRedactor {
         )
     }
 }
+
+enum InstagramGraphLogger {
+    static func logFailure(_ error: Error, url: String) {
+        print("[ConnectedInsights][Graph] Failure: \(error.localizedDescription)")
+        print("[ConnectedInsights][Graph] URL: \(InstagramGraphLogRedactor.redacted(url))")
+    }
+
+    static func responsePreview(_ data: Data) -> String {
+        let body = String(data: data, encoding: .utf8) ?? "<non-utf8 response>"
+        return InstagramGraphLogRedactor.redacted(String(body.prefix(1_500)))
+    }
+}

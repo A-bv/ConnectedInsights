@@ -31,7 +31,7 @@ public final class InstagramProfileRepository: InstagramProfileRepositoryProtoco
     ) {
         switch credentialsProvider.validCredentials() {
         case .failure(let error):
-            print("[ConnectedInsights][Graph] Failure: \(error.localizedDescription)")
+            InstagramGraphLogger.logFailure(error, url: "credentials check")
             completion(.failure(error))
         case .success(let credentials):
             guard let encodedUrl = endpointBuilder.analyticsProfileURL(
@@ -54,38 +54,21 @@ public final class InstagramProfileRepository: InstagramProfileRepositoryProtoco
         client.fetchGraphData(from: url) { result in
             switch result {
             case .failure(let error):
-                self.logGraphFailure(error, url: url)
+                InstagramGraphLogger.logFailure(error, url: url)
                 completion(.failure(error))
             case .success(let data):
                 guard let profile = try? JSONDecoder().decode(Profile.self, from: data) else {
-                    completion(.failure(self.decodingError(data: data, sourceURL: url)))
+                    let error = InstagramGraphServiceError.decodingFailed(
+                        type: String(describing: Profile.self),
+                        body: InstagramGraphLogger.responsePreview(data)
+                    )
+                    InstagramGraphLogger.logFailure(error, url: url)
+                    completion(.failure(error))
                     return
                 }
                 self.onDataFetched?(data)
                 completion(.success(profile))
             }
         }
-    }
-
-    private func decodingError(
-        data: Data,
-        sourceURL: String
-    ) -> Error {
-        let error = InstagramGraphServiceError.decodingFailed(
-            type: String(describing: Profile.self),
-            body: responsePreview(data)
-        )
-        logGraphFailure(error, url: sourceURL)
-        return error
-    }
-
-    private func logGraphFailure(_ error: Error, url: String) {
-        print("[ConnectedInsights][Graph] Failure: \(error.localizedDescription)")
-        print("[ConnectedInsights][Graph] URL: \(InstagramGraphLogRedactor.redacted(url))")
-    }
-
-    private func responsePreview(_ data: Data) -> String {
-        let body = String(data: data, encoding: .utf8) ?? "<non-utf8 response>"
-        return InstagramGraphLogRedactor.redacted(String(body.prefix(1_500)))
     }
 }
