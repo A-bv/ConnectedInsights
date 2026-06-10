@@ -62,7 +62,6 @@ public protocol ConnectedInsightsGatewayProtocol {
 
     func accessState() -> ConnectedInsightsAccessState
     func setup(facebookToken: String, completion: @escaping (Result<Void, Error>) -> Void)
-    func setup(facebookToken: String, completion: @escaping (Bool) -> Void)
     func reset()
 }
 
@@ -127,17 +126,6 @@ public final class ConnectedInsightsGateway: ConnectedInsightsGatewayProtocol {
                 InstagramGraphLogger.logFailure(error, url: "setup/account-resolution")
                 self.settings.isCorrectSetup = false
                 completion(.failure(error))
-            }
-        }
-    }
-
-    public func setup(facebookToken: String, completion: @escaping (Bool) -> Void) {
-        setup(facebookToken: facebookToken) { result in
-            switch result {
-            case .success:
-                completion(true)
-            case .failure:
-                completion(false)
             }
         }
     }
