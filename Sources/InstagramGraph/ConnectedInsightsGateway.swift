@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 public struct ConnectedInsightsSession {
     public let facebookToken: String
@@ -123,7 +124,7 @@ public final class ConnectedInsightsGateway: ConnectedInsightsGatewayProtocol {
                 self.settings.isCorrectSetup = true
                 completion(.success(()))
             case .failure(let error):
-                print("[ConnectedInsights][Setup] Account resolution failed: \(error.localizedDescription)")
+                InstagramGraphLogger.logFailure(error, url: "setup/account-resolution")
                 self.settings.isCorrectSetup = false
                 completion(.failure(error))
             }
