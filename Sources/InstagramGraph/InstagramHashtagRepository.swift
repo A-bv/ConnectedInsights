@@ -78,7 +78,7 @@ public final class InstagramHashtagRepository: InstagramHashtagRepositoryProtoco
                 case .success(let data):
                     self.handleHashtagIdResponse(data: data, credentials: credentials, completion: completion)
                 case .failure(let error):
-                    self.logGraphFailure(error, url: searchURL)
+                    InstagramGraphLogger.logFailure(error, url: searchURL)
                     completion(.failure(error))
                 }
             }
@@ -95,7 +95,7 @@ public final class InstagramHashtagRepository: InstagramHashtagRepositoryProtoco
             guard let id = response.data.first?.id else {
                 completion(.failure(InstagramGraphServiceError.decodingFailed(
                     type: String(describing: HashtagIdResponse.self),
-                    body: responsePreview(data)
+                    body: InstagramGraphLogger.responsePreview(data)
                 )))
                 return
             }
@@ -120,7 +120,7 @@ public final class InstagramHashtagRepository: InstagramHashtagRepositoryProtoco
         client.fetchGraphData(from: url) { result in
             switch result {
             case .failure(let error):
-                self.logGraphFailure(error, url: url)
+                InstagramGraphLogger.logFailure(error, url: url)
                 completion(.failure(error))
             case .success(let data):
                 self.handleSuccessResult(of: T.self, data: data, sourceURL: url, completion: completion)
@@ -156,19 +156,9 @@ public final class InstagramHashtagRepository: InstagramHashtagRepositoryProtoco
     ) -> Error {
         let error = InstagramGraphServiceError.decodingFailed(
             type: String(describing: type),
-            body: responsePreview(data)
+            body: InstagramGraphLogger.responsePreview(data)
         )
-        logGraphFailure(error, url: sourceURL)
+        InstagramGraphLogger.logFailure(error, url: sourceURL)
         return error
-    }
-
-    private func logGraphFailure(_ error: Error, url: String) {
-        print("[ConnectedInsights][Graph] Failure: \(error.localizedDescription)")
-        print("[ConnectedInsights][Graph] URL: \(InstagramGraphLogRedactor.redacted(url))")
-    }
-
-    private func responsePreview(_ data: Data) -> String {
-        let body = String(data: data, encoding: .utf8) ?? "<non-utf8 response>"
-        return InstagramGraphLogRedactor.redacted(String(body.prefix(1_500)))
     }
 }
