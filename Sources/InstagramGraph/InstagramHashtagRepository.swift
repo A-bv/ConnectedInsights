@@ -31,7 +31,6 @@ public final class InstagramHashtagRepository: InstagramHashtagRepositoryProtoco
             case .success(let mediaSearchURL):
                 self.getMedia(for: mediaSearchURL, completion: completion)
             case .failure(let error):
-                print("Error finding hashtag URL: \(error)")
                 completion(.failure(error))
             }
         }
@@ -44,11 +43,9 @@ public final class InstagramHashtagRepository: InstagramHashtagRepositoryProtoco
         fetchDecodedData(of: Media.self, from: url) { result in
             switch result {
             case .failure(let error):
-                print("Error: \(error)")
                 completion(.failure(error))
             case .success(let data):
                 guard let dataMedia = data as? [DataMedia] else {
-                    print("Error: getMedia has no dataMedia")
                     completion(.failure(InstagramGraphServiceError.unexpectedResponse))
                     return
                 }

@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 public enum InstagramGraphServiceError: LocalizedError {
     case invalidURL(String)
@@ -57,7 +58,7 @@ public final class InstagramGraphClient: InstagramGraphClientProtocol {
             return
         }
 
-        print("[ConnectedInsights][Graph] Request \(apiGraphVersion): \(InstagramGraphLogRedactor.redacted(urlString))")
+        InstagramGraphLogger.logRequest(version: apiGraphVersion, url: urlString)
 
         session.dataTask(with: url) { data, response, error in
             if let error = error {
@@ -100,9 +101,14 @@ public enum InstagramGraphLogRedactor {
 }
 
 enum InstagramGraphLogger {
+    private static let logger = Logger(subsystem: "InstagramGraph", category: "graph")
+
+    static func logRequest(version: String, url: String) {
+        logger.debug("Request \(version): \(InstagramGraphLogRedactor.redacted(url))")
+    }
+
     static func logFailure(_ error: Error, url: String) {
-        print("[ConnectedInsights][Graph] Failure: \(error.localizedDescription)")
-        print("[ConnectedInsights][Graph] URL: \(InstagramGraphLogRedactor.redacted(url))")
+        logger.error("Failure: \(error.localizedDescription) — \(InstagramGraphLogRedactor.redacted(url))")
     }
 
     static func responsePreview(_ data: Data) -> String {
