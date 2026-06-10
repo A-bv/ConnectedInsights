@@ -90,7 +90,7 @@ public final class InstagramGraphService: InstagramGraphServicing {
         profileRepository.loadProfileForAnalytics(mediaLimit: mediaLimit, completion: completion)
     }
 
-    public func business_discovery_url(account: String) -> String? {
+    public func businessDiscoveryURL(account: String) -> String? {
         guard case let .success(credentials) = credentialsProvider.validCredentials() else {
             return nil
         }
