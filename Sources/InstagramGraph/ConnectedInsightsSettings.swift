@@ -4,8 +4,6 @@ public protocol ConnectedInsightsSettingsProtocol {
     var isCorrectSetup: Bool { get set }
     var facebookToken: String? { get set }
     var instagramBusinessAccountId: String? { get set }
-    var setupInfoShown: Bool { get set }
-    var pressedFacebookLoginButton: Bool { get set }
 }
 
 public struct ConnectedInsightsConfiguration {
@@ -23,8 +21,6 @@ public final class UserDefaultsConnectedInsightsSettings: ConnectedInsightsSetti
         static let isCorrectSetup = "isCorrectSetup"
         static let facebookToken = "fbToken"
         static let instagramBusinessAccountId = "IgBId"
-        static let setupInfoShown = "setupInfoShownOnce"
-        static let pressedFacebookLoginButton = "pressedFBLoginButton"
     }
 
     private let defaults: UserDefaults
@@ -48,13 +44,5 @@ public final class UserDefaultsConnectedInsightsSettings: ConnectedInsightsSetti
         set { defaults.set(newValue, forKey: Key.instagramBusinessAccountId) }
     }
 
-    public var setupInfoShown: Bool {
-        get { defaults.bool(forKey: Key.setupInfoShown) }
-        set { defaults.set(newValue, forKey: Key.setupInfoShown) }
-    }
 
-    public var pressedFacebookLoginButton: Bool {
-        get { defaults.bool(forKey: Key.pressedFacebookLoginButton) }
-        set { defaults.set(newValue, forKey: Key.pressedFacebookLoginButton) }
-    }
 }

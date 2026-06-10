@@ -3,6 +3,7 @@ import Foundation
 public protocol InstagramGraphCredentialsProviding {
     var facebookToken: String? { get }
     var instagramBusinessAccountId: String? { get }
+    func validCredentials() -> Result<InstagramGraphCredentials, Error>
 }
 
 public protocol InstagramGraphAccessTokenProviding {

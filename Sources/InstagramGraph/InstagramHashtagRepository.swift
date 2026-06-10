@@ -67,6 +67,6 @@ public final class InstagramHashtagRepository: InstagramHashtagRepositoryProtoco
             InstagramGraphLogger.logFailure(error, url: url)
             throw error
         }
-        return media.data.compactMap { $0 }
+        return media.data
     }
 }

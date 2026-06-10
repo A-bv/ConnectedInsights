@@ -505,21 +505,15 @@ private final class FakeConnectedInsightsSettings: ConnectedInsightsSettingsProt
     var isCorrectSetup: Bool
     var facebookToken: String?
     var instagramBusinessAccountId: String?
-    var setupInfoShown: Bool
-    var pressedFacebookLoginButton: Bool
 
     init(
         isCorrectSetup: Bool = false,
         facebookToken: String? = nil,
-        instagramBusinessAccountId: String? = nil,
-        setupInfoShown: Bool = false,
-        pressedFacebookLoginButton: Bool = false
+        instagramBusinessAccountId: String? = nil
     ) {
         self.isCorrectSetup = isCorrectSetup
         self.facebookToken = facebookToken
         self.instagramBusinessAccountId = instagramBusinessAccountId
-        self.setupInfoShown = setupInfoShown
-        self.pressedFacebookLoginButton = pressedFacebookLoginButton
     }
 }
 
