@@ -2,15 +2,13 @@
 
 A small Swift package that simplifies communication between your Apple app (iOS/macOS) and Meta's Instagram Graph API.
 
-It takes a valid Meta token as input and outputs hashtag media or Instagram analytics, skipping the Graph API implementation work in between.
-
-The implementation stays outside your app for easier testing, reuse, and updates.
+It takes a valid Meta token as input and outputs hashtag media or Instagram profile analytics, skipping the Graph API implementation work in between.
 
 Note: get the Meta token in your app with [Facebook Login for iOS](https://developers.facebook.com/docs/facebook-login/ios), or generate one manually with [Live Meta Tests](#live-meta-tests).
 
 ## Installation
 
-Add the package with Swift Package Manager to your iOS or macOS app:
+Add the package with Swift Package Manager:
 
 ```text
 https://github.com/A-bv/InstagramGraph
@@ -21,28 +19,25 @@ https://github.com/A-bv/InstagramGraph
 ```swift
 import InstagramGraph
 
-let resolver = InstagramGraphAccountResolver()
+let gateway = ConnectedInsightsGateway()
 
-resolver.resolveCredentials(facebookToken: metaToken) { result in
-    switch result {
-    case .success(let credentials):
-        let graphService = InstagramGraphService(credentials: credentials)
+// Call once after the user logs in with Facebook
+try await gateway.setup(facebookToken: metaToken)
+```
 
-        graphService.searchHashtag(searchedHashtag: "travel") { result in
-            print(result)
-        }
+Then check the gateway state before making calls:
 
-        graphService.loadProfileForAnalytics(mediaLimit: 12) { result in
-            print(result)
-        }
-
-    case .failure(let error):
-        print(error)
-    }
+```swift
+switch gateway.accessState() {
+case .ready:
+    let profile = try await gateway.loadProfileForAnalytics(mediaLimit: 12)
+    let posts = try await gateway.searchHashtag(searchedHashtag: "travel")
+case .needsSetup(let error):
+    print(error.localizedDescription)
 }
 ```
 
-`mediaLimit` is optional. Use it when the app wants to cap analytics media.
+`mediaLimit` is optional. Omit it to load all available media.
 
 ## Getting Started
 
@@ -59,7 +54,7 @@ cd /path/to/InstagramGraph
 META_GRAPH_TOKEN="..." swift test --filter MetaLiveTests
 ```
 
-Or, if you want to test a specific hashtag:
+Or, to test a specific hashtag:
 
 ```sh
 META_GRAPH_TOKEN="..." META_TEST_HASHTAG="cars" swift test --filter MetaLiveTests
