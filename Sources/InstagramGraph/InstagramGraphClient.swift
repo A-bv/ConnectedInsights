@@ -6,7 +6,6 @@ public enum InstagramGraphServiceError: LocalizedError {
     case missingCredentials(hasToken: Bool, hasInstagramBusinessId: Bool)
     case instagramAccountNotFound
     case emptyResponse
-    case unexpectedResponse
     case graphHTTPError(statusCode: Int, body: String)
     case decodingFailed(type: String, body: String)
     case networkError(URLError)
@@ -21,8 +20,6 @@ public enum InstagramGraphServiceError: LocalizedError {
             return "No Instagram Business / Creator account connected to a Facebook Page was found for this token."
         case .emptyResponse:
             return "Instagram Graph returned an empty response."
-        case .unexpectedResponse:
-            return "Instagram Graph returned an unexpected response."
         case let .graphHTTPError(statusCode, body):
             return "Instagram Graph HTTP error \(statusCode): \(body)"
         case let .decodingFailed(type, body):
@@ -65,7 +62,7 @@ final class InstagramGraphClient: InstagramGraphClientProtocol, Sendable {
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw InstagramGraphServiceError.unexpectedResponse
+            throw InstagramGraphServiceError.networkError(URLError(.badServerResponse))
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
