@@ -9,6 +9,7 @@ public enum InstagramGraphServiceError: LocalizedError {
     case unexpectedResponse
     case graphHTTPError(statusCode: Int, body: String)
     case decodingFailed(type: String, body: String)
+    case networkError(URLError)
 
     public var errorDescription: String? {
         switch self {
@@ -26,6 +27,8 @@ public enum InstagramGraphServiceError: LocalizedError {
             return "Instagram Graph HTTP error \(statusCode): \(body)"
         case let .decodingFailed(type, body):
             return "Could not decode Instagram Graph response as \(type): \(body)"
+        case .networkError(let error):
+            return "Network error: \(error.localizedDescription)"
         }
     }
 }
@@ -53,7 +56,13 @@ final class InstagramGraphClient: InstagramGraphClientProtocol, Sendable {
 
         InstagramGraphLogger.logRequest(version: apiGraphVersion, url: urlString)
 
-        let (data, response) = try await session.data(from: url)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(from: url)
+        } catch let urlError as URLError {
+            throw InstagramGraphServiceError.networkError(urlError)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw InstagramGraphServiceError.unexpectedResponse
@@ -65,6 +74,10 @@ final class InstagramGraphClient: InstagramGraphClientProtocol, Sendable {
                 statusCode: httpResponse.statusCode,
                 body: InstagramGraphLogRedactor.redacted(String(body.prefix(1_500)))
             )
+        }
+
+        guard !data.isEmpty else {
+            throw InstagramGraphServiceError.emptyResponse
         }
 
         return data
