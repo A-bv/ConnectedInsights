@@ -30,17 +30,23 @@ public enum InstagramGraphServiceError: LocalizedError {
     }
 }
 
+protocol URLSessionDataFetching: Sendable {
+    func data(from url: URL) async throws -> (Data, URLResponse)
+}
+
+extension URLSession: URLSessionDataFetching {}
+
 protocol InstagramGraphClientProtocol: Sendable {
     func fetchGraphData(from urlString: String) async throws -> Data
 }
 
 final class InstagramGraphClient: InstagramGraphClientProtocol, Sendable {
     private let apiGraphVersion: String
-    private let session: URLSession
+    private let session: any URLSessionDataFetching
 
     init(
         apiGraphVersion: String = ConnectedInsightsConfiguration.production.graphAPIVersion,
-        session: URLSession = .shared
+        session: any URLSessionDataFetching = URLSession.shared
     ) {
         self.apiGraphVersion = apiGraphVersion
         self.session = session
