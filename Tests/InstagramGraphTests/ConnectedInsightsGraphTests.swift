@@ -5,6 +5,8 @@ import XCTest
 final class ConnectedInsightsGraphTests: XCTestCase {
     private let productionGraphAPIVersion = ConnectedInsightsConfiguration.production.graphAPIVersion
 
+    // MARK: - Access State
+
     func testAccessState_whenSetupIsMissing_requiresSetup() {
         let sut = makeGateway(settings: FakeConnectedInsightsSettings(isCorrectSetup: false))
 
@@ -68,6 +70,8 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         }
     }
 
+    // MARK: - Credentials Provider
+
     func testCredentialsProvider_whenCredentialsExist_returnsValidCredentials() throws {
         let settings = FakeConnectedInsightsSettings(
             facebookToken: "facebook-token",
@@ -117,6 +121,8 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         }
     }
 
+    // MARK: - Account Resolver
+
     func testAccountResolver_resolvesFirstPageWithInstagramAccount() async throws {
         let response = """
         {
@@ -147,7 +153,7 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         XCTAssertTrue(client.requestedURLs[0].contains("access_token=facebook-token"))
     }
 
-func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials() async throws {
+    func testAccountResolver_whenNoPageHasInstagramAccount_throwsInstagramAccountNotFound() async throws {
         let response = """
         {
           "data": [
@@ -169,7 +175,9 @@ func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials(
         }
     }
 
-    func testGatewaySetup_whenAccountResolutionSucceedsStoresOnlyInstagramAccount() async throws {
+    // MARK: - Gateway Setup
+
+    func testGatewaySetup_whenAccountResolutionSucceeds_storesOnlyInstagramAccount() async throws {
         let response = """
         {
           "data": [
@@ -199,7 +207,7 @@ func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials(
         XCTAssertTrue(settings.isCorrectSetup)
     }
 
-    func testGatewaySetup_whenAccountResolutionFailsReturnsError() async throws {
+    func testGatewaySetup_whenAccountResolutionFails_doesNotPersistCredentials() async throws {
         let settings = FakeConnectedInsightsSettings()
         let client = FakeInstagramGraphClient(responses: [.failure(InstagramGraphServiceError.instagramAccountNotFound)])
         let sut = ConnectedInsightsGateway(
@@ -225,6 +233,8 @@ func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials(
         XCTAssertFalse(settings.isCorrectSetup)
     }
 
+    // MARK: - Endpoint Builder
+
     func testEndpointBuilder_buildsEncodedHashtagSearchURL() throws {
         let sut = InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion)
         let credentials = InstagramGraphCredentials(
@@ -243,7 +253,7 @@ func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials(
         XCTAssertTrue(url.contains("access_token=token%20value"))
     }
 
-    func testEndpointBuilder_hashtagMediaURL_containsOnlyFieldsUsedBySmartG() throws {
+    func testEndpointBuilder_hashtagMediaURL_containsOnlyFieldsUsedByPackTags() throws {
         let sut = InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion)
         let credentials = InstagramGraphCredentials(
             facebookToken: "facebook-token",
@@ -328,6 +338,8 @@ func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials(
         XCTAssertFalse(url.contains("media.limit(12%7B"))
     }
 
+    // MARK: - Hashtag Repository
+
     func testHashtagRepository_whenCredentialsAreMissing_doesNotCallGraphClient() async throws {
         let client = FakeInstagramGraphClient()
         let sut = InstagramHashtagRepository(
@@ -368,15 +380,19 @@ func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials(
             client: client
         )
 
-        let loadedMedia = try await sut.searchHashtag(searchedHashtag: "travel")
+        let posts = try await sut.searchHashtag(searchedHashtag: "travel")
 
         XCTAssertEqual(client.requestedURLs.count, 2)
         XCTAssertTrue(client.requestedURLs[0].contains("ig_hashtag_search"))
         XCTAssertTrue(client.requestedURLs[1].contains("17841562498105353/top_media"))
-        let firstMedia = try XCTUnwrap(loadedMedia.first)
-        XCTAssertEqual(firstMedia.caption, "Hello")
-        XCTAssertEqual(firstMedia.commentsCount, 3)
-        XCTAssertEqual(firstMedia.likeCount, 9)
+        let firstPost = try XCTUnwrap(posts.first)
+        XCTAssertEqual(firstPost.caption, "Hello")
+        XCTAssertEqual(firstPost.commentsCount, 3)
+        XCTAssertEqual(firstPost.likeCount, 9)
+        XCTAssertEqual(firstPost.mediaType, .image)
+        XCTAssertNotNil(firstPost.timestamp)
+        let mediaUrl = try XCTUnwrap(firstPost.mediaUrl)
+        XCTAssertEqual(mediaUrl.absoluteString, "https://example.com/image.jpg")
     }
 
     func testHashtagRepository_whenTopMediaReturns500_propagatesError() async throws {
@@ -409,6 +425,102 @@ func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials(
         }
     }
 
+    func testHashtagRepository_whenClientThrowsNetworkError_propagatesNetworkError() async throws {
+        let client = FakeInstagramGraphClient(responses: [
+            .failure(InstagramGraphServiceError.networkError(URLError(.notConnectedToInternet)))
+        ])
+        let sut = InstagramHashtagRepository(
+            credentialsProvider: FakeInstagramGraphCredentialsProvider(
+                facebookToken: "facebook-token",
+                instagramBusinessAccountId: "ig-business-id"
+            ),
+            endpointBuilder: InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion),
+            client: client
+        )
+
+        do {
+            _ = try await sut.searchHashtag(searchedHashtag: "travel")
+            XCTFail("Expected networkError")
+        } catch let error as InstagramGraphServiceError {
+            guard case .networkError = error else {
+                XCTFail("Expected networkError, got \(error)")
+                return
+            }
+        }
+    }
+
+    func testHashtagRepository_whenClientReturnsEmptyResponse_propagatesEmptyResponseError() async throws {
+        let client = FakeInstagramGraphClient(responses: [
+            .failure(InstagramGraphServiceError.emptyResponse)
+        ])
+        let sut = InstagramHashtagRepository(
+            credentialsProvider: FakeInstagramGraphCredentialsProvider(
+                facebookToken: "facebook-token",
+                instagramBusinessAccountId: "ig-business-id"
+            ),
+            endpointBuilder: InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion),
+            client: client
+        )
+
+        do {
+            _ = try await sut.searchHashtag(searchedHashtag: "travel")
+            XCTFail("Expected emptyResponse error")
+        } catch let error as InstagramGraphServiceError {
+            guard case .emptyResponse = error else {
+                XCTFail("Expected emptyResponse, got \(error)")
+                return
+            }
+        }
+    }
+
+    // MARK: - Profile Repository
+
+    func testProfileRepository_whenProfileDataIsValid_returnsDecodedProfile() async throws {
+        let response = """
+        {
+          "id": "1789",
+          "username": "packtags.app",
+          "followers_count": 1500,
+          "follows_count": 200,
+          "media_count": 85,
+          "biography": "Organize your life",
+          "media": {
+            "data": [
+              {
+                "media_type": "IMAGE",
+                "caption": "Hello world",
+                "timestamp": "2026-06-07T08:00:00+0000",
+                "like_count": 42,
+                "comments_count": 5
+              }
+            ]
+          }
+        }
+        """.data(using: .utf8)!
+        let client = FakeInstagramGraphClient(responses: [.success(response)])
+        let sut = InstagramProfileRepository(
+            credentialsProvider: FakeInstagramGraphCredentialsProvider(
+                facebookToken: "facebook-token",
+                instagramBusinessAccountId: "1789"
+            ),
+            endpointBuilder: InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion),
+            client: client
+        )
+
+        let profile = try await sut.loadProfileForAnalytics(mediaLimit: nil)
+
+        XCTAssertEqual(profile.username, "packtags.app")
+        XCTAssertEqual(profile.followersCount, 1500)
+        XCTAssertEqual(profile.followsCount, 200)
+        XCTAssertEqual(profile.biography, "Organize your life")
+        let firstPost = try XCTUnwrap(profile.media?.data.first)
+        XCTAssertEqual(firstPost.mediaType, .image)
+        XCTAssertEqual(firstPost.caption, "Hello world")
+        XCTAssertEqual(firstPost.likeCount, 42)
+        XCTAssertEqual(firstPost.commentsCount, 5)
+        XCTAssertNotNil(firstPost.timestamp)
+    }
+
     func testProfileRepository_whenInsightsMetricInvalid_propagates400Error() async throws {
         let invalidMetricBody = #"{"error":{"message":"(#100) metric[1] must be one of the following values: reach, follower_count, ...","type":"OAuthException","code":100}}"#
         let failure: Result<Data, Error> = .failure(InstagramGraphServiceError.graphHTTPError(statusCode: 400, body: invalidMetricBody))
@@ -433,6 +545,8 @@ func testAccountResolver_whenNoPageHasInstagramAccountReturnsMissingCredentials(
             XCTAssertEqual(statusCode, 400)
         }
     }
+
+    // MARK: - Helpers
 
     private func makeGateway(
         settings: FakeConnectedInsightsSettings,
