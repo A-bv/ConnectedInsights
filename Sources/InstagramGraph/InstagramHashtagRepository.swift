@@ -1,10 +1,6 @@
 import Foundation
 
-protocol InstagramHashtagRepositoryProtocol: HashtagSearchProviding {
-    func searchHashtag(searchedHashtag: String) async throws -> [InstagramPost]
-}
-
-final class InstagramHashtagRepository: InstagramHashtagRepositoryProtocol, Sendable {
+final class InstagramHashtagRepository: HashtagSearchProviding, Sendable {
     private let credentialsProvider: any InstagramGraphCredentialsProviding
     private let endpointBuilder: InstagramGraphEndpointBuilder
     private let client: any InstagramGraphClientProtocol

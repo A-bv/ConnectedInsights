@@ -1,7 +1,7 @@
-struct HashtagIdResponse: Codable {
+struct HashtagIdResponse: Decodable {
     let data: [DataItem]
 }
 
-struct DataItem: Codable {
+struct DataItem: Decodable {
     let id: String
 }

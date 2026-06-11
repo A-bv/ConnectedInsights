@@ -1,10 +1,6 @@
 import Foundation
 
-protocol InstagramProfileRepositoryProtocol: ProfileDataProviding {
-    func loadProfileForAnalytics(mediaLimit: Int?) async throws -> Profile
-}
-
-final class InstagramProfileRepository: InstagramProfileRepositoryProtocol, Sendable {
+final class InstagramProfileRepository: ProfileDataProviding, Sendable {
     private let credentialsProvider: any InstagramGraphCredentialsProviding
     private let endpointBuilder: InstagramGraphEndpointBuilder
     private let client: any InstagramGraphClientProtocol
