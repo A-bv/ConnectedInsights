@@ -55,14 +55,6 @@ final class InstagramGraphAccountResolver: Sendable {
         }
     }
 
-    private func resolveCredentials(facebookToken: String) async throws -> InstagramGraphCredentials {
-        let account = try await resolveAccount(facebookToken: facebookToken)
-        return InstagramGraphCredentials(
-            facebookToken: facebookToken,
-            instagramBusinessAccountId: account.instagramBusinessAccountId
-        )
-    }
-
     private func meAccountsURL(facebookToken: String) -> String? {
         var components = URLComponents()
         components.scheme = "https"
