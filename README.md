@@ -14,6 +14,8 @@ Add the package with Swift Package Manager:
 https://github.com/A-bv/InstagramGraph
 ```
 
+> Targets **Meta Graph API v23.0**. Pass a custom `ConnectedInsightsConfiguration` to override the version.
+
 ## Usage
 
 ```swift

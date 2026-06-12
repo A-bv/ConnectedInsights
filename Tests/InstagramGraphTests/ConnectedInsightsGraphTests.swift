@@ -184,6 +184,84 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         }
     }
 
+    func testCredentialsProvider_whenInstagramAccountIdIsMissing_reportsHasTokenTrueAndHasIdFalse() {
+        let settings = FakeConnectedInsightsSettings(
+            facebookToken: "facebook-token",
+            instagramBusinessAccountId: nil
+        )
+        let sut = SettingsInstagramGraphCredentialsProvider(settings: settings)
+
+        switch sut.validCredentials() {
+        case .success:
+            XCTFail("Expected missing credentials failure")
+        case .failure(let error):
+            guard case InstagramGraphServiceError.missingCredentials(let hasToken, let hasInstagramBusinessId) = error else {
+                XCTFail("Expected missingCredentials error, got \(error)")
+                return
+            }
+            XCTAssertTrue(hasToken)
+            XCTAssertFalse(hasInstagramBusinessId)
+        }
+    }
+
+    func testCredentialsProvider_whenBothCredentialsAreNil_reportsBothFalse() {
+        let settings = FakeConnectedInsightsSettings(
+            facebookToken: nil,
+            instagramBusinessAccountId: nil
+        )
+        let sut = SettingsInstagramGraphCredentialsProvider(settings: settings)
+
+        switch sut.validCredentials() {
+        case .success:
+            XCTFail("Expected missing credentials failure")
+        case .failure(let error):
+            guard case InstagramGraphServiceError.missingCredentials(let hasToken, let hasInstagramBusinessId) = error else {
+                XCTFail("Expected missingCredentials error, got \(error)")
+                return
+            }
+            XCTAssertFalse(hasToken)
+            XCTAssertFalse(hasInstagramBusinessId)
+        }
+    }
+
+    func testCredentialsProvider_whenTokenIsEmptyString_treatsItAsMissing() {
+        let settings = FakeConnectedInsightsSettings(
+            facebookToken: "",
+            instagramBusinessAccountId: "ig-business-id"
+        )
+        let sut = SettingsInstagramGraphCredentialsProvider(settings: settings)
+
+        switch sut.validCredentials() {
+        case .success:
+            XCTFail("Expected missing credentials failure")
+        case .failure(let error):
+            guard case InstagramGraphServiceError.missingCredentials(let hasToken, _) = error else {
+                XCTFail("Expected missingCredentials error, got \(error)")
+                return
+            }
+            XCTAssertFalse(hasToken)
+        }
+    }
+
+    func testCredentialsProvider_whenInstagramAccountIdIsEmptyString_treatsItAsMissing() {
+        let settings = FakeConnectedInsightsSettings(
+            facebookToken: "facebook-token",
+            instagramBusinessAccountId: ""
+        )
+        let sut = SettingsInstagramGraphCredentialsProvider(settings: settings)
+
+        switch sut.validCredentials() {
+        case .success:
+            XCTFail("Expected missing credentials failure")
+        case .failure(let error):
+            guard case InstagramGraphServiceError.missingCredentials(_, let hasInstagramBusinessId) = error else {
+                XCTFail("Expected missingCredentials error, got \(error)")
+                return
+            }
+            XCTAssertFalse(hasInstagramBusinessId)
+        }
+    }
+
     // MARK: - Account Resolver
 
     func testAccountResolver_resolvesFirstPageWithInstagramAccount() async throws {
