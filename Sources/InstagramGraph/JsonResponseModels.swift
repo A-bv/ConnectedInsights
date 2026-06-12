@@ -1,9 +1,14 @@
 import Foundation
 
+/// The type of media attached to an Instagram post.
 public enum InstagramMediaType: Hashable {
+    /// A single photo.
     case image
+    /// A single video or reel.
     case video
+    /// An album containing multiple photos or videos.
     case carouselAlbum
+    /// A media type returned by the API that is not yet modelled.
     case unknown(String)
 }
 
@@ -20,18 +25,31 @@ extension InstagramMediaType: Decodable {
     }
 }
 
+/// An Instagram Business or Creator account profile returned by the Graph API.
 public struct Profile: Hashable, Decodable {
+    /// The bio text shown on the profile.
     public let biography: String?
+    /// The display name on the profile.
     public let name: String?
+    /// Total number of accounts that follow this profile.
     public let followersCount: Int?
+    /// Total number of accounts this profile follows.
     public let followsCount: Int?
+    /// The Graph API object ID for this Instagram account.
     public let id: String
+    /// The numeric Instagram user ID.
     public let igId: Int?
+    /// Total number of media objects published by this account.
     public let mediaCount: Int?
+    /// URL of the profile picture.
     public let profilePictureUrl: URL?
+    /// The Instagram handle, without the `@` prefix.
     public let username: String?
+    /// The website URL listed on the profile.
     public let website: String?
+    /// Aggregated account-level engagement metrics.
     public let insights: ProfileInsights?
+    /// The account's recent media.
     public let media: Media?
 
     private enum CodingKeys: String, CodingKey {
@@ -50,18 +68,26 @@ public struct Profile: Hashable, Decodable {
     }
 }
 
+/// A collection of account-level insight metrics.
 public struct ProfileInsights: Hashable, Decodable {
     public let data: [InsightMetric]
 }
 
+/// A single named metric with time-series values (e.g. impressions, reach).
 public struct InsightMetric: Hashable, Decodable {
+    /// The metric name as returned by the API (e.g. `"impressions"`, `"reach"`).
     public let name: String?
+    /// The reporting period (e.g. `"day"`, `"week"`, `"month"`).
     public let period: String?
+    /// Individual data points within this reporting period.
     public let values: [InsightValue]
 }
 
+/// A single data point within an insight metric.
 public struct InsightValue: Hashable, Decodable {
+    /// The numeric value for this data point.
     public let value: Int?
+    /// The end of the measurement window for this data point.
     public let endTime: Date?
 
     private enum CodingKeys: String, CodingKey {
@@ -70,19 +96,30 @@ public struct InsightValue: Hashable, Decodable {
     }
 }
 
+/// A paginated collection of Instagram posts.
 public struct Media: Hashable, Decodable {
     public let data: [InstagramPost]
 }
 
+/// A single Instagram post or reel returned by the Graph API.
 public struct InstagramPost: Hashable, Decodable {
+    /// The media type of this post.
     public let mediaType: InstagramMediaType?
+    /// The caption text.
     public let caption: String?
+    /// When the post was published.
     public let timestamp: Date?
+    /// Direct URL to the media file.
     public let mediaUrl: URL?
+    /// Number of comments on this post.
     public let commentsCount: Int?
+    /// Whether comments are enabled on this post.
     public let isCommentEnabled: Bool?
+    /// The username of the account that owns this post.
     public let username: String?
+    /// Number of likes.
     public let likeCount: Int?
+    /// Post-level engagement metrics.
     public let insights: PostInsights?
 
     private enum CodingKeys: String, CodingKey {
@@ -98,6 +135,7 @@ public struct InstagramPost: Hashable, Decodable {
     }
 }
 
+/// A collection of post-level insight metrics.
 public struct PostInsights: Hashable, Decodable {
     public let data: [InsightMetric]
 }

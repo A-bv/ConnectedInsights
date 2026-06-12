@@ -1,13 +1,24 @@
 import Foundation
 import OSLog
 
+/// Errors thrown by the Instagram Graph API networking layer.
+///
+/// These surface from ``ConnectedInsightsGatewayProtocol/loadProfileForAnalytics(mediaLimit:)``
+/// and ``ConnectedInsightsGatewayProtocol/searchHashtag(searchedHashtag:)``.
 public enum InstagramGraphServiceError: LocalizedError {
+    /// A URL could not be constructed for the given path or identifier.
     case invalidURL(String)
+    /// Required credentials (token or account ID) are absent from settings.
     case missingCredentials(hasToken: Bool, hasInstagramBusinessId: Bool)
+    /// The token is valid but no Instagram Business or Creator account is linked to a Facebook Page.
     case instagramAccountNotFound
+    /// The API returned a 2xx status with an empty body.
     case emptyResponse
+    /// The API returned a non-2xx HTTP status.
     case graphHTTPError(statusCode: Int, body: String)
+    /// The response body could not be decoded into the expected model type.
     case decodingFailed(type: String, body: String)
+    /// A network-level failure occurred before a response was received.
     case networkError(URLError)
 
     public var errorDescription: String? {
