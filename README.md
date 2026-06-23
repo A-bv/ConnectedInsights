@@ -1,8 +1,15 @@
 # InstagramGraph
 
+![Swift](https://img.shields.io/badge/Swift-5.9-orange)
+![Platforms](https://img.shields.io/badge/platform-iOS%2015%2B%20%7C%20macOS%2012%2B-blue)
+![SPM](https://img.shields.io/badge/SPM-supported-brightgreen)
+![Graph API](https://img.shields.io/badge/Meta%20Graph%20API-v23.0-blue)
+
 A small Swift package that simplifies communication between your Apple app (iOS/macOS) and Meta's Instagram Graph API.
 
 It takes a valid Meta token as input and outputs hashtag media or Instagram profile analytics, skipping the Graph API implementation work in between.
+
+InstagramGraph does not perform Facebook Login. Your app must provide a valid Meta token.
 
 Note: get the Meta token in your app with [Facebook Login for iOS](https://developers.facebook.com/docs/facebook-login/ios), or generate one manually with [Live Meta Tests](#live-meta-tests).
 
@@ -38,7 +45,9 @@ case .needsSetup(let error):
 }
 ```
 
-`mediaLimit` is optional. Omit it to load all available media.
+`mediaLimit` is optional. Use it to cap the number of recent media items returned for analytics.
+
+Setup and API calls are `async throws`; Meta HTTP errors and decoding errors are surfaced to help debug API changes.
 
 ## Live Meta Tests
 Requires a valid token from [Meta Graph API Explorer](https://developers.facebook.com/tools/explorer/).
