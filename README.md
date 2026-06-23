@@ -10,6 +10,7 @@ Note: get the Meta token in your app with [Facebook Login for iOS](https://devel
 iOS 15 · macOS 12 · Swift 5.9
 
 ## Installation
+Swift package manager: https://github.com/A-bv/InstagramGraph
 ```swift
 .package(url: "https://github.com/A-bv/InstagramGraph", from: "3.0.2")
 ```
