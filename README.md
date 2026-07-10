@@ -5,6 +5,7 @@
 ![Platforms](https://img.shields.io/badge/platform-iOS%2015%2B%20%7C%20macOS%2012%2B-blue)
 ![SPM](https://img.shields.io/badge/SPM-supported-brightgreen)
 ![Graph API](https://img.shields.io/badge/Meta%20Graph%20API-v23.0-blue)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 A small Swift package that simplifies communication between your Apple app (iOS/macOS) and Meta's Instagram Graph API.
 
@@ -137,4 +138,4 @@ RUN_KEYCHAIN_LIVE=1 swift test --filter KeychainStoreLiveTests
 ```
 
 ## License
-No license file has been added yet, so default copyright applies and reuse rights are not granted. If you intend the package to be used by others, add a `LICENSE` file (e.g. MIT) and reference it here.
+Released under the [MIT License](LICENSE).
