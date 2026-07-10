@@ -85,9 +85,10 @@ struct InstagramGraphEndpointBuilder: Sendable {
         ])
     }
 
-    // Staged for the `businessDiscovery` feature on `ConnectedInsightsGatewayProtocol`; not yet
-    // wired into a public call. `account` is interpolated into the `fields` expression, so it must
-    // be validated by the caller before this is exposed.
+    // `account` is interpolated directly into the `fields` expression (Graph does not accept it as a
+    // separate query parameter), so callers MUST pass a handle already validated by
+    // `InstagramAccountUsername.validated(_:)` — that restricts it to characters which cannot break
+    // out of the expression. `InstagramBusinessDiscoveryRepository` is the only caller and does so.
     func businessDiscoveryURL(
         account: String,
         credentials: InstagramGraphCredentials

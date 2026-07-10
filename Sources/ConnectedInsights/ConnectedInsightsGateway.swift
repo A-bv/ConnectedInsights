@@ -38,6 +38,10 @@ protocol ProfileDataProviding: Sendable {
     func loadProfileForAnalytics(mediaLimit: Int?) async throws -> Profile
 }
 
+protocol BusinessDiscoveryProviding: Sendable {
+    func businessDiscovery(account: String) async throws -> Profile
+}
+
 /// The main entry point for Instagram Graph API operations.
 ///
 /// Create a single instance, call ``setup(facebookToken:)`` once after the user authenticates
@@ -91,9 +95,18 @@ public protocol ConnectedInsightsGatewayProtocol {
     /// - Throws: ``InstagramGraphServiceError``.
     func loadProfileForAnalytics(mediaLimit: Int?) async throws -> Profile
 
-    // TODO: func businessDiscovery(account: String) async throws -> Profile
-    // Fetches a competitor account's public Instagram data via Meta's business_discovery
-    // field. Needs live testing against the API before being made public.
+    /// Returns another public account's profile and recent media via Meta's `business_discovery`.
+    ///
+    /// Use this to pull competitor or reference accounts. The queried account must be an Instagram
+    /// Business or Creator account, and *your* connected account (from ``setup(facebookToken:)``)
+    /// must be a Business account — `business_discovery` is not available to Creator accounts.
+    ///
+    /// - Parameter account: The target account's handle, with or without a leading `@`.
+    /// - Returns: A ``Profile`` for the discovered account, including recent public posts.
+    /// - Throws: ``InstagramGraphServiceError/invalidAccountUsername(_:)`` for a malformed handle,
+    ///   ``InstagramGraphServiceError/instagramAccountNotFound`` when the account is not a reachable
+    ///   Business/Creator account, or another ``InstagramGraphServiceError`` on network/decoding failure.
+    func businessDiscovery(account: String) async throws -> Profile
 }
 
 public extension ConnectedInsightsGatewayProtocol {
@@ -112,6 +125,7 @@ public final class ConnectedInsightsGateway: ConnectedInsightsGatewayProtocol {
     private let tokenProvider: (any InstagramGraphAccessTokenProviding)?
     private let hashtagProvider: any HashtagSearchProviding
     private let profileProvider: any ProfileDataProviding
+    private let discoveryProvider: any BusinessDiscoveryProviding
     private let accountResolver: InstagramGraphAccountResolver
 
     public convenience init(
@@ -138,6 +152,11 @@ public final class ConnectedInsightsGateway: ConnectedInsightsGatewayProtocol {
                 endpointBuilder: endpointBuilder,
                 client: client
             ),
+            discoveryProvider: InstagramBusinessDiscoveryRepository(
+                credentialsProvider: credentialsProvider,
+                endpointBuilder: endpointBuilder,
+                client: client
+            ),
             accountResolver: InstagramGraphAccountResolver(apiGraphVersion: configuration.graphAPIVersion)
         )
     }
@@ -147,12 +166,14 @@ public final class ConnectedInsightsGateway: ConnectedInsightsGatewayProtocol {
         tokenProvider: (any InstagramGraphAccessTokenProviding)? = nil,
         hashtagProvider: any HashtagSearchProviding,
         profileProvider: any ProfileDataProviding,
+        discoveryProvider: any BusinessDiscoveryProviding,
         accountResolver: InstagramGraphAccountResolver = InstagramGraphAccountResolver()
     ) {
         self.settings = settings
         self.tokenProvider = tokenProvider
         self.hashtagProvider = hashtagProvider
         self.profileProvider = profileProvider
+        self.discoveryProvider = discoveryProvider
         self.accountResolver = accountResolver
     }
 
@@ -162,6 +183,10 @@ public final class ConnectedInsightsGateway: ConnectedInsightsGatewayProtocol {
 
     public func loadProfileForAnalytics(mediaLimit: Int?) async throws -> Profile {
         try await profileProvider.loadProfileForAnalytics(mediaLimit: mediaLimit)
+    }
+
+    public func businessDiscovery(account: String) async throws -> Profile {
+        try await discoveryProvider.businessDiscovery(account: account)
     }
 
     public func setup(facebookToken: String) async throws {

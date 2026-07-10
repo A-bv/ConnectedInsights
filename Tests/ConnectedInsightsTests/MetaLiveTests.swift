@@ -83,6 +83,33 @@ final class MetaLiveTests: XCTestCase {
         XCTAssertFalse(media.isEmpty, "Expected hashtag search to return at least one media item.")
     }
 
+    func testBusinessDiscoveryAgainstMeta() async throws {
+        let token = try requiredEnvironmentValue("META_GRAPH_TOKEN")
+        // business_discovery requires *your* connected account to be a Business account (not Creator).
+        // The target defaults to a well-known public business account.
+        let account = optionalEnvironmentValue("META_TEST_DISCOVERY_ACCOUNT") ?? "natgeo"
+        let version = graphAPIVersion
+        let pageID = try await resolvePageId(token: token, version: version)
+        let instagramBusinessId = try await resolveInstagramBusinessAccountId(
+            token: token,
+            pageID: pageID,
+            version: version
+        )
+        let repository = InstagramBusinessDiscoveryRepository(
+            credentialsProvider: StaticInstagramGraphCredentialsProvider(
+                facebookToken: token,
+                instagramBusinessAccountId: instagramBusinessId
+            ),
+            endpointBuilder: InstagramGraphEndpointBuilder(apiGraphVersion: version),
+            client: InstagramGraphClient(apiGraphVersion: version)
+        )
+
+        let profile = try await repository.businessDiscovery(account: account)
+
+        XCTAssertEqual(profile.username?.lowercased(), account.lowercased())
+        print("[MetaLive] business_discovery \(account): followers=\(profile.followersCount ?? -1) recentMedia=\(profile.media?.data.count ?? 0)")
+    }
+
     func testExpensiveCaptionProbeAgainstMeta() async throws {
         guard environment["META_RUN_EXPENSIVE_CAPTION_PROBE"] == "1" else {
             throw XCTSkip("Set META_RUN_EXPENSIVE_CAPTION_PROBE=1 to reproduce Meta's caption page-size failure.")

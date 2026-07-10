@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org).
 
+## [4.1.0] - 2026-07-10
+
+### Added
+- `ConnectedInsightsGateway.businessDiscovery(account:)` — fetches another public account's
+  `Profile` and recent media via Meta's `business_discovery` field (e.g. for competitor analysis).
+  The handle is accepted with or without a leading `@` and is strictly validated before use, so a
+  malformed handle throws `InstagramGraphServiceError.invalidAccountUsername` without a network
+  round-trip. The queried account must be a Business/Creator account, and the caller's own account
+  must be a Business account (a Meta constraint on `business_discovery`).
+- `InstagramGraphServiceError.invalidAccountUsername(_:)` for handles that are empty, too long, or
+  contain characters outside the permitted set. **Note:** consumers that switch exhaustively over
+  `InstagramGraphServiceError` will need to handle the new case.
+
 ## [4.0.0] - 2026-07-10
 
 ### Changed

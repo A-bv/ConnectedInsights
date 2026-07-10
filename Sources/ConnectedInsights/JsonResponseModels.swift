@@ -140,8 +140,8 @@ public struct PostInsights: Hashable, Decodable, Sendable {
     public let data: [InsightMetric]
 }
 
-// Staged for the `businessDiscovery` feature (see ConnectedInsightsGatewayProtocol); the response
-// model is ready but not yet decoded by any public call.
+/// Top-level wrapper for a `business_discovery` response; the discovered account is decoded into
+/// a ``Profile``. See ``ConnectedInsightsGatewayProtocol/businessDiscovery(account:)``.
 struct Discovery: Hashable, Decodable, Sendable {
     let businessDiscovery: Profile?
 

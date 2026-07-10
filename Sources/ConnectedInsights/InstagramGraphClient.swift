@@ -12,6 +12,9 @@ public enum InstagramGraphServiceError: LocalizedError {
     case missingCredentials(hasToken: Bool, hasInstagramBusinessId: Bool)
     /// The token is valid but no Instagram Business or Creator account is linked to a Facebook Page.
     case instagramAccountNotFound
+    /// The supplied account handle is empty or contains characters that are not valid in an
+    /// Instagram username (letters, digits, periods and underscores, up to 30 characters).
+    case invalidAccountUsername(String)
     /// The API returned a 2xx status with an empty body.
     case emptyResponse
     /// The API returned a non-2xx HTTP status.
@@ -29,6 +32,8 @@ public enum InstagramGraphServiceError: LocalizedError {
             return "Missing Instagram Graph credentials. hasToken=\(hasToken), hasInstagramBusinessId=\(hasInstagramBusinessId)"
         case .instagramAccountNotFound:
             return "No Instagram Business / Creator account connected to a Facebook Page was found for this token."
+        case .invalidAccountUsername(let account):
+            return "Invalid Instagram account username: \(account)"
         case .emptyResponse:
             return "Instagram Graph returned an empty response."
         case let .graphHTTPError(statusCode, body):

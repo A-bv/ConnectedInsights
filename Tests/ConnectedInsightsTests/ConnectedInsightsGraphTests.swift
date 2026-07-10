@@ -113,6 +113,7 @@ final class ConnectedInsightsGraphTests: XCTestCase {
             settings: settings,
             hashtagProvider: FakeHashtagProvider(),
             profileProvider: FakeProfileProvider(),
+            discoveryProvider: FakeDiscoveryProvider(),
             accountResolver: resolver
         )
 
@@ -138,6 +139,7 @@ final class ConnectedInsightsGraphTests: XCTestCase {
             settings: settings,
             hashtagProvider: FakeHashtagProvider(),
             profileProvider: FakeProfileProvider(),
+            discoveryProvider: FakeDiscoveryProvider(),
             accountResolver: resolver
         )
 
@@ -354,6 +356,7 @@ final class ConnectedInsightsGraphTests: XCTestCase {
             tokenProvider: FakeAccessTokenProvider(facebookToken: "provider-token"),
             hashtagProvider: FakeHashtagProvider(),
             profileProvider: FakeProfileProvider(),
+            discoveryProvider: FakeDiscoveryProvider(),
             accountResolver: InstagramGraphAccountResolver(apiGraphVersion: productionGraphAPIVersion, client: client)
         )
 
@@ -372,6 +375,7 @@ final class ConnectedInsightsGraphTests: XCTestCase {
             tokenProvider: FakeAccessTokenProvider(facebookToken: "provider-token"),
             hashtagProvider: FakeHashtagProvider(),
             profileProvider: FakeProfileProvider(),
+            discoveryProvider: FakeDiscoveryProvider(),
             accountResolver: InstagramGraphAccountResolver(apiGraphVersion: productionGraphAPIVersion, client: client)
         )
 
@@ -512,6 +516,127 @@ final class ConnectedInsightsGraphTests: XCTestCase {
         XCTAssertTrue(url.contains("business_discovery.username(packtags.app)"))
         XCTAssertTrue(url.contains("media.limit(12)"))
         XCTAssertFalse(url.contains("media.limit(12%7B"))
+    }
+
+    // MARK: - Account Username Validation
+
+    func testAccountUsername_acceptsValidHandleAndNormalizes() throws {
+        XCTAssertEqual(try InstagramAccountUsername.validated("nat_geo.99"), "nat_geo.99")
+        XCTAssertEqual(try InstagramAccountUsername.validated("@packtags"), "packtags")
+        XCTAssertEqual(try InstagramAccountUsername.validated("  spaced  "), "spaced")
+    }
+
+    func testAccountUsername_rejectsMalformedAndInjectionHandles() {
+        let invalid = ["", "bad name", "a)b", "a&b", "a=b", "a+b", "a/b", String(repeating: "a", count: 31)]
+        for handle in invalid {
+            XCTAssertThrowsError(try InstagramAccountUsername.validated(handle)) { error in
+                guard case InstagramGraphServiceError.invalidAccountUsername = error else {
+                    return XCTFail("Expected invalidAccountUsername for \"\(handle)\", got \(error)")
+                }
+            }
+        }
+    }
+
+    // MARK: - Business Discovery Repository
+
+    private func makeDiscoveryRepository(
+        client: FakeInstagramGraphClient,
+        facebookToken: String? = "facebook-token",
+        instagramBusinessAccountId: String? = "1789"
+    ) -> InstagramBusinessDiscoveryRepository {
+        InstagramBusinessDiscoveryRepository(
+            credentialsProvider: FakeInstagramGraphCredentialsProvider(
+                facebookToken: facebookToken,
+                instagramBusinessAccountId: instagramBusinessAccountId
+            ),
+            endpointBuilder: InstagramGraphEndpointBuilder(apiGraphVersion: productionGraphAPIVersion),
+            client: client
+        )
+    }
+
+    func testBusinessDiscoveryRepository_decodesDiscoveredProfile() async throws {
+        let response = #"{"business_discovery":{"id":"123","username":"natgeo","followers_count":275000000,"media":{"data":[{"media_type":"IMAGE","caption":"Wildlife","like_count":42}]}},"id":"self"}"#.data(using: .utf8)!
+        let client = FakeInstagramGraphClient(responses: [.success(response)])
+        let sut = makeDiscoveryRepository(client: client)
+
+        let profile = try await sut.businessDiscovery(account: "@natgeo")
+
+        XCTAssertEqual(profile.username, "natgeo")
+        XCTAssertEqual(profile.followersCount, 275_000_000)
+        XCTAssertEqual(profile.media?.data.first?.caption, "Wildlife")
+        XCTAssertEqual(client.requestedURLs.count, 1)
+        XCTAssertTrue(client.requestedURLs[0].contains("business_discovery.username(natgeo)"))
+    }
+
+    func testBusinessDiscoveryRepository_whenNoDiscoveryObject_throwsAccountNotFound() async {
+        let client = FakeInstagramGraphClient(responses: [.success(#"{"id":"self"}"#.data(using: .utf8)!)])
+        let sut = makeDiscoveryRepository(client: client)
+
+        do {
+            _ = try await sut.businessDiscovery(account: "ghosted")
+            XCTFail("Expected instagramAccountNotFound")
+        } catch let error as InstagramGraphServiceError {
+            guard case .instagramAccountNotFound = error else {
+                return XCTFail("Expected instagramAccountNotFound, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error \(error)")
+        }
+    }
+
+    func testBusinessDiscoveryRepository_whenUsernameInvalid_throwsWithoutCallingClient() async {
+        let client = FakeInstagramGraphClient()
+        let sut = makeDiscoveryRepository(client: client)
+
+        do {
+            _ = try await sut.businessDiscovery(account: "bad handle)&x")
+            XCTFail("Expected invalidAccountUsername")
+        } catch let error as InstagramGraphServiceError {
+            guard case .invalidAccountUsername = error else {
+                return XCTFail("Expected invalidAccountUsername, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error \(error)")
+        }
+        XCTAssertTrue(client.requestedURLs.isEmpty)
+    }
+
+    func testBusinessDiscoveryRepository_whenCredentialsMissing_throwsWithoutCallingClient() async {
+        let client = FakeInstagramGraphClient()
+        let sut = makeDiscoveryRepository(client: client, facebookToken: nil)
+
+        do {
+            _ = try await sut.businessDiscovery(account: "natgeo")
+            XCTFail("Expected missingCredentials")
+        } catch let error as InstagramGraphServiceError {
+            guard case .missingCredentials = error else {
+                return XCTFail("Expected missingCredentials, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error \(error)")
+        }
+        XCTAssertTrue(client.requestedURLs.isEmpty)
+    }
+
+    // MARK: - Gateway Business Discovery
+
+    func testGateway_businessDiscovery_delegatesToProviderWithGivenAccount() async throws {
+        let profile = try JSONDecoder.instagram().decode(
+            Profile.self,
+            from: #"{"id":"123","username":"natgeo"}"#.data(using: .utf8)!
+        )
+        let provider = FakeDiscoveryProvider(result: .success(profile))
+        let sut = ConnectedInsightsGateway(
+            settings: FakeConnectedInsightsSettings(isCorrectSetup: true, facebookToken: "t", instagramBusinessAccountId: "1789"),
+            hashtagProvider: FakeHashtagProvider(),
+            profileProvider: FakeProfileProvider(),
+            discoveryProvider: provider
+        )
+
+        let result = try await sut.businessDiscovery(account: "@natgeo")
+
+        XCTAssertEqual(result.username, "natgeo")
+        XCTAssertEqual(provider.requestedAccount, "@natgeo")
     }
 
     // MARK: - Hashtag Repository
@@ -832,7 +957,8 @@ final class ConnectedInsightsGraphTests: XCTestCase {
             settings: settings,
             tokenProvider: tokenProvider,
             hashtagProvider: FakeHashtagProvider(),
-            profileProvider: FakeProfileProvider()
+            profileProvider: FakeProfileProvider(),
+            discoveryProvider: FakeDiscoveryProvider()
         )
     }
 
@@ -925,5 +1051,19 @@ private struct FakeHashtagProvider: HashtagSearchProviding {
 private struct FakeProfileProvider: ProfileDataProviding {
     func loadProfileForAnalytics(mediaLimit: Int?) async throws -> Profile {
         throw InstagramGraphServiceError.emptyResponse
+    }
+}
+
+private final class FakeDiscoveryProvider: BusinessDiscoveryProviding, @unchecked Sendable {
+    private(set) var requestedAccount: String?
+    private let result: Result<Profile, Error>
+
+    init(result: Result<Profile, Error> = .failure(InstagramGraphServiceError.emptyResponse)) {
+        self.result = result
+    }
+
+    func businessDiscovery(account: String) async throws -> Profile {
+        requestedAccount = account
+        return try result.get()
     }
 }

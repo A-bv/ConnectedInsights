@@ -9,7 +9,7 @@
 
 **The implementation layer between Meta's Instagram Graph API and your app's data.** A small Swift package for Apple apps (iOS/macOS): hand it a valid Meta token and get typed hashtag media and Instagram profile analytics back — skipping the Graph API request-building, pagination fields, and JSON decoding in between.
 
-- **Two calls, one entry point.** `searchHashtag(_:)` and `loadProfileForAnalytics(mediaLimit:)` on a single `ConnectedInsightsGateway`.
+- **Three calls, one entry point.** `searchHashtag(_:)`, `loadProfileForAnalytics(mediaLimit:)`, and `businessDiscovery(account:)` on a single `ConnectedInsightsGateway`.
 - **Typed results.** `Profile`, `InstagramPost`, and insight metrics — no dictionaries, no manual `CodingKeys`.
 - **Secure by default.** Credentials are stored in the Keychain (not synced, not backed up), or kept entirely in your own store if you prefer.
 - **Diagnostic errors.** Meta HTTP failures and schema drift surface as a typed `InstagramGraphServiceError` that names the failing field.
@@ -56,6 +56,7 @@ switch gateway.accessState() {
 case .ready:
     let profile = try await gateway.loadProfileForAnalytics(mediaLimit: 12)
     let posts = try await gateway.searchHashtag(searchedHashtag: "travel")
+    let competitor = try await gateway.businessDiscovery(account: "natgeo")
 
 case .needsSetup(let error):
     // Setup is incomplete or credentials are missing; error explains why.
@@ -64,6 +65,8 @@ case .needsSetup(let error):
 ```
 
 `loadProfileForAnalytics(mediaLimit:)` caps how many recent media items are returned; pass `nil` (or use the no-argument `loadProfileForAnalytics()` overload) for all available media. `searchHashtag(_:)` takes a hashtag **without** the `#` prefix and returns the most recent matching public posts.
+
+`businessDiscovery(account:)` returns another public account's `Profile` and recent media (e.g. to compare against a competitor). The handle is accepted with or without a leading `@`; it's validated before use, so a malformed handle throws `InstagramGraphServiceError.invalidAccountUsername` rather than hitting the network. Note Meta's constraint: the queried account must be a Business/Creator account, and **your** connected account must be a **Business** account — `business_discovery` is unavailable to Creator accounts.
 
 Call `reset()` to clear stored credentials and force a fresh `setup`.
 
@@ -96,6 +99,9 @@ do {
         print("Could not decode \(type): \(body)")
     case .instagramAccountNotFound:
         print("No Instagram Business/Creator account is linked to a Facebook Page for this token.")
+    case .invalidAccountUsername(let handle):
+        // A malformed handle passed to businessDiscovery(account:); rejected before any request.
+        print("Not a valid Instagram username: \(handle)")
     case .networkError, .emptyResponse, .invalidURL, .missingCredentials:
         print(error.localizedDescription)
     }
@@ -124,6 +130,8 @@ Exercise the real Graph API. Requires a valid token from the [Meta Graph API Exp
 META_GRAPH_TOKEN="..." swift test --filter MetaLiveTests
 # Target a specific hashtag (default: travel):
 META_GRAPH_TOKEN="..." META_TEST_HASHTAG="cars" swift test --filter MetaLiveTests
+# Target a business_discovery account (default: natgeo):
+META_GRAPH_TOKEN="..." META_TEST_DISCOVERY_ACCOUNT="nike" swift test --filter MetaLiveTests
 ```
 
 Meta limits hashtag search to 30 unique hashtags per 7 days. **Do not commit tokens or account secrets.**
