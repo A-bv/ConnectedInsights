@@ -1,5 +1,5 @@
 import XCTest
-@testable import InstagramGraph
+@testable import ConnectedInsights
 
 /// Exercises the real `KeychainStore` against the system Keychain (not the in-memory fake used by
 /// the unit tests). Gated behind `RUN_KEYCHAIN_LIVE=1` because Keychain access can be unavailable

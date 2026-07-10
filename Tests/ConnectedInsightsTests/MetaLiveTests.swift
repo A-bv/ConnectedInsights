@@ -1,5 +1,5 @@
 import XCTest
-@testable import InstagramGraph
+@testable import ConnectedInsights
 
 final class MetaLiveTests: XCTestCase {
     private let environment = ProcessInfo.processInfo.environment

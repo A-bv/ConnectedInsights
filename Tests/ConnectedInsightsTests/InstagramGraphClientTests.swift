@@ -1,5 +1,5 @@
 import XCTest
-@testable import InstagramGraph
+@testable import ConnectedInsights
 
 final class InstagramGraphClientTests: XCTestCase {
 

@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org).
 
+## [4.0.0] - 2026-07-10
+
+### Changed
+- **Renamed the package and module from `InstagramGraph` to `ConnectedInsights`.** "Instagram" is a
+  Meta trademark; the library now uses it only descriptively (it is a client *for* the Instagram
+  Graph API) rather than as the product name. **Breaking:** update your dependency URL to
+  `.../ConnectedInsights` and change `import InstagramGraph` to `import ConnectedInsights`. The
+  public API (types, methods, `InstagramGraphServiceError`) is otherwise unchanged; GitHub redirects
+  the old repository URL so existing Swift Package Manager references keep resolving.
+- **Adopted the Swift 6 language mode** (`swift-tools-version: 6.0`, `swiftLanguageModes: [.v6]`).
+  Builds clean under complete strict concurrency. Deployment targets are unchanged (iOS 15 / macOS
+  12); consuming the package now requires the Swift 6 compiler (Xcode 16+).
+- Marked `ConnectedInsightsConfiguration` as `Sendable`.
+
 ## [3.1.0] - 2026-06-29
 
 ### Security

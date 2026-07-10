@@ -7,7 +7,7 @@ protocol ConnectedInsightsSettingsProtocol: Sendable {
 }
 
 /// Configuration for the Instagram Graph API connection.
-public struct ConnectedInsightsConfiguration {
+public struct ConnectedInsightsConfiguration: Sendable {
     /// The Graph API version used in all requests (e.g. `"v23.0"`).
     public var graphAPIVersion: String
 

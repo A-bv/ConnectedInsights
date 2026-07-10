@@ -1,22 +1,20 @@
-# InstagramGraph
+# ConnectedInsights
 
-[![CI](https://github.com/A-bv/InstagramGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/A-bv/InstagramGraph/actions/workflows/ci.yml)
-![Swift](https://img.shields.io/badge/Swift-5.9-orange)
+[![CI](https://github.com/A-bv/ConnectedInsights/actions/workflows/ci.yml/badge.svg)](https://github.com/A-bv/ConnectedInsights/actions/workflows/ci.yml)
+![Swift](https://img.shields.io/badge/Swift-6.0-orange)
 ![Platforms](https://img.shields.io/badge/platform-iOS%2015%2B%20%7C%20macOS%2012%2B-blue)
 ![SPM](https://img.shields.io/badge/SPM-supported-brightgreen)
 ![Graph API](https://img.shields.io/badge/Meta%20Graph%20API-v23.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-A small Swift package that simplifies communication between your Apple app (iOS/macOS) and Meta's Instagram Graph API.
-
-You give it a valid Meta token; it gives you hashtag media or Instagram profile analytics as typed Swift models — skipping the Graph API request-building, pagination fields, and JSON decoding in between.
+**The implementation layer between Meta's Instagram Graph API and your app's data.** A small Swift package for Apple apps (iOS/macOS): hand it a valid Meta token and get typed hashtag media and Instagram profile analytics back — skipping the Graph API request-building, pagination fields, and JSON decoding in between.
 
 - **Two calls, one entry point.** `searchHashtag(_:)` and `loadProfileForAnalytics(mediaLimit:)` on a single `ConnectedInsightsGateway`.
 - **Typed results.** `Profile`, `InstagramPost`, and insight metrics — no dictionaries, no manual `CodingKeys`.
 - **Secure by default.** Credentials are stored in the Keychain (not synced, not backed up), or kept entirely in your own store if you prefer.
 - **Diagnostic errors.** Meta HTTP failures and schema drift surface as a typed `InstagramGraphServiceError` that names the failing field.
 
-> **InstagramGraph does not perform Facebook Login.** Your app supplies the Meta token — obtain it with [Facebook Login for iOS](https://developers.facebook.com/docs/facebook-login/ios), or generate one manually for testing via [Live Meta Tests](#live-meta-tests).
+> **ConnectedInsights does not perform Facebook Login.** Your app supplies the Meta token — obtain it with [Facebook Login for iOS](https://developers.facebook.com/docs/facebook-login/ios), or generate one manually for testing via [Live Meta Tests](#live-meta-tests).
 
 ## Contents
 - [Requirements](#requirements)
@@ -29,7 +27,7 @@ You give it a valid Meta token; it gives you hashtag media or Instagram profile 
 - [License](#license)
 
 ## Requirements
-iOS 15 · macOS 12 · Swift 5.9 · Targets **Meta Graph API v23.0**
+iOS 15 · macOS 12 · Swift 6 (Xcode 16+) · Targets **Meta Graph API v23.0**
 
 The token must carry the `instagram_basic`, `instagram_manage_insights`, and `pages_show_list` permissions, and the account must be an Instagram Business or Creator account linked to a Facebook Page.
 
@@ -37,16 +35,16 @@ The token must carry the `instagram_basic`, `instagram_manage_insights`, and `pa
 Add the package in Xcode (*File ▸ Add Package Dependencies…*) or in your `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/A-bv/InstagramGraph", from: "3.1.0")
+.package(url: "https://github.com/A-bv/ConnectedInsights", from: "4.0.0")
 ```
 
-Then add `"InstagramGraph"` to your target's dependencies.
+Then add `"ConnectedInsights"` to your target's dependencies.
 
 ## Usage
 Create one gateway, call `setup` once after the user authenticates, then check `accessState()` before each data call.
 
 ```swift
-import InstagramGraph
+import ConnectedInsights
 
 let gateway = ConnectedInsightsGateway()
 
