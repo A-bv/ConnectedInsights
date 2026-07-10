@@ -1,11 +1,11 @@
 # ConnectedInsights
 
 [![CI](https://github.com/A-bv/ConnectedInsights/actions/workflows/ci.yml/badge.svg)](https://github.com/A-bv/ConnectedInsights/actions/workflows/ci.yml)
-![Swift](https://img.shields.io/badge/Swift-6.0-orange)
-![Platforms](https://img.shields.io/badge/platform-iOS%2015%2B%20%7C%20macOS%2012%2B-blue)
-![SPM](https://img.shields.io/badge/SPM-supported-brightgreen)
-![Graph API](https://img.shields.io/badge/Meta%20Graph%20API-v23.0-blue)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Swift 6](https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white)
+![iOS 15+ | macOS 12+](https://img.shields.io/badge/platform-iOS%2015%2B%20%7C%20macOS%2012%2B-007AFF?logo=apple&logoColor=white)
+![SPM](https://img.shields.io/badge/SPM-compatible-F05138?logo=swift&logoColor=white)
+![Meta Graph API v23.0](https://img.shields.io/badge/Meta%20Graph%20API-v23.0-0866FF?logo=meta&logoColor=white)
+![License MIT](https://img.shields.io/badge/license-MIT-informational)
 
 **The implementation layer between Meta's Instagram Graph API and your app's data.** A small Swift package for Apple apps (iOS/macOS): hand it a valid Meta token and get typed hashtag media and Instagram profile analytics back — skipping the Graph API request-building, pagination fields, and JSON decoding in between.
 
