@@ -1,7 +1,7 @@
 import Foundation
 
 /// The type of media attached to an Instagram post.
-public enum InstagramMediaType: Hashable {
+public enum InstagramMediaType: Hashable, Sendable {
     /// A single photo.
     case image
     /// A single video or reel.
@@ -26,7 +26,7 @@ extension InstagramMediaType: Decodable {
 }
 
 /// An Instagram Business or Creator account profile returned by the Graph API.
-public struct Profile: Hashable, Decodable {
+public struct Profile: Hashable, Decodable, Sendable {
     /// The bio text shown on the profile.
     public let biography: String?
     /// The display name on the profile.
@@ -69,12 +69,12 @@ public struct Profile: Hashable, Decodable {
 }
 
 /// A collection of account-level insight metrics.
-public struct ProfileInsights: Hashable, Decodable {
+public struct ProfileInsights: Hashable, Decodable, Sendable {
     public let data: [InsightMetric]
 }
 
 /// A single named metric with time-series values (e.g. impressions, reach).
-public struct InsightMetric: Hashable, Decodable {
+public struct InsightMetric: Hashable, Decodable, Sendable {
     /// The metric name as returned by the API (e.g. `"impressions"`, `"reach"`).
     public let name: String?
     /// The reporting period (e.g. `"day"`, `"week"`, `"month"`).
@@ -84,7 +84,7 @@ public struct InsightMetric: Hashable, Decodable {
 }
 
 /// A single data point within an insight metric.
-public struct InsightValue: Hashable, Decodable {
+public struct InsightValue: Hashable, Decodable, Sendable {
     /// The numeric value for this data point.
     public let value: Int?
     /// The end of the measurement window for this data point.
@@ -97,12 +97,12 @@ public struct InsightValue: Hashable, Decodable {
 }
 
 /// A paginated collection of Instagram posts.
-public struct Media: Hashable, Decodable {
+public struct Media: Hashable, Decodable, Sendable {
     public let data: [InstagramPost]
 }
 
 /// A single Instagram post or reel returned by the Graph API.
-public struct InstagramPost: Hashable, Decodable {
+public struct InstagramPost: Hashable, Decodable, Sendable {
     /// The media type of this post.
     public let mediaType: InstagramMediaType?
     /// The caption text.
@@ -136,13 +136,13 @@ public struct InstagramPost: Hashable, Decodable {
 }
 
 /// A collection of post-level insight metrics.
-public struct PostInsights: Hashable, Decodable {
+public struct PostInsights: Hashable, Decodable, Sendable {
     public let data: [InsightMetric]
 }
 
 // Staged for the `businessDiscovery` feature (see ConnectedInsightsGatewayProtocol); the response
 // model is ready but not yet decoded by any public call.
-struct Discovery: Hashable, Decodable {
+struct Discovery: Hashable, Decodable, Sendable {
     let businessDiscovery: Profile?
 
     private enum CodingKeys: String, CodingKey {

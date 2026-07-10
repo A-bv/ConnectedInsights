@@ -1,6 +1,6 @@
 import Foundation
 
-struct InstagramGraphResolvedAccount {
+struct InstagramGraphResolvedAccount: Sendable {
     let facebookPageId: String
     let facebookPageName: String?
     let instagramBusinessAccountId: String
