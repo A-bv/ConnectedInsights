@@ -15,7 +15,9 @@ All notable changes to this project are documented here. This project adheres to
 - **Adopted the Swift 6 language mode** (`swift-tools-version: 6.0`, `swiftLanguageModes: [.v6]`).
   Builds clean under complete strict concurrency. Deployment targets are unchanged (iOS 15 / macOS
   12); consuming the package now requires the Swift 6 compiler (Xcode 16+).
-- Marked `ConnectedInsightsConfiguration` as `Sendable`.
+- The public response models (`Profile`, `InstagramPost`, `InstagramMediaType`, and the insight
+  types) and internal configuration/value types now conform to `Sendable`, so results cross the
+  `@MainActor` gateway's isolation boundary cleanly under strict concurrency.
 
 ## [3.1.0] - 2026-06-29
 
